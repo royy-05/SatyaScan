@@ -1,0 +1,38 @@
+{
+  "app": {
+    "name": "SatyaScan",
+    "tagline": "Truth at the border: AI Document & Identity Verification",
+    "subtitle": "Ministry of Home Affairs / SSB Border Security Checkpoint System"
+  },
+  "auth": {
+    "loginTitle": "Sign In to SatyaScan",
+    "loginSubtitle": "Enter your checkpoint officer credentials",
+    "emailLabel": "Email Address",
+    "passwordLabel": "Password",
+    "submitLogin": "Authenticate & Sign In",
+    "registerDisabled": "Registration is invite-only. Contact your system administrator for access."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "submit": "Submit Document",
+    "submissions": "All Submissions",
+    "reviewQueue": "Review Queue",
+    "myReviews": "My Reviews",
+    "users": "User Management",
+    "audit": "Audit Logs",
+    "stats": "Analytics & Stats",
+    "profile": "Profile & Security",
+    "logout": "Sign Out"
+  },
+  "verdict": {
+    "PASS": "Passed",
+    "REVIEW": "Flagged for Review",
+    "FAIL": "Verification Failed"
+  },
+  "status": {
+    "PENDING": "Queued",
+    "PROCESSING": "Processing",
+    "VERIFIED": "Verified",
+    "FAILED": "Failed"
+  }
+}

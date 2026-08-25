@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUBMITTER
+  OFFICER
+  ADMIN
+}
+
+enum DocType {
+  PASSPORT
+  VISA
+  NATIONAL_ID
+  DRIVING_LICENSE
+  PERMIT
+}
+
+enum DocStatus {
+  PENDING
+  PROCESSING
+  VERIFIED
+  FAILED
+}
+
+enum Verdict {
+  PASS
+  REVIEW
+  FAIL
+}
+
+enum Decision {
+  APPROVE
+  REJECT
+}
+
+model User {
+  id           String           @id @default(uuid())
+  email        String           @unique
+  passwordHash String
+  name         String
+  role         Role             @default(SUBMITTER)
+  isActive     Boolean          @default(true)
+  deletedAt    DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  documents       Document[]
+  reviewDecisions ReviewDecision[]
+  auditLogs       AuditLog[]
+  refreshTokens   RefreshToken[]
+
+  @@index([email])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([tokenHash])
+}
+
+model Document {
+  id               String      @id @default(uuid())
+  submitterId      String
+  submitter        User        @relation(fields: [submitterId], references: [id])
+  docType          DocType
+  filePath         String
+  fileHash         String
+  originalFilename String
+  mimeType         String
+  sizeBytes        Int
+  status           DocStatus   @default(PENDING)
+  deletedAt        DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  verifications   Verification[]
+  reviewDecisions ReviewDecision[]
+
+  @@index([submitterId])
+  @@index([fileHash])
+}
+
+model Verification {
+  id                   String   @id @default(uuid())
+  documentId           String
+  document             Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  extractedName        String?
+  extractedDocNumber   String?
+  extractedDob         String?
+  extractedNationality String?
+  extractedExpiry      String?
+  extractedGender      String?
+  layers               Json
+  overallScore         Float
+  verdict              Verdict
+  engineVersion        String
+  createdAt            DateTime @default(now())
+
+  @@index([documentId])
+  @@index([extractedDocNumber])
+}
+
+model ReviewDecision {
+  id         String   @id @default(uuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  reviewerId String
+  reviewer   User     @relation(fields: [reviewerId], references: [id])
+  decision   Decision
+  notes      String   @db.Text
+  createdAt  DateTime @default(now())
+
+  @@index([documentId])
+  @@index([reviewerId])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}

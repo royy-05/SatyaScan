@@ -1,0 +1,18 @@
+{
+  "name": "satyascan-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SatyaScan: AI-powered document and identity verification system for border checkpoints",
+  "scripts": {
+    "dev": "concurrently -k -p \"[{name}]\" -c \"cyan.bold,magenta.bold\" \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:migrate": "npm --prefix server run prisma:migrate",
+    "db:seed": "npm --prefix server run prisma:seed",
+    "lint": "concurrently \"npm --prefix server run lint\" \"npm --prefix client run lint\"",
+    "format": "concurrently \"npm --prefix server run format\" \"npm --prefix client run format\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
