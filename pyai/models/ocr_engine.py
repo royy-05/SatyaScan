@@ -136,12 +136,12 @@ class OCREngine:
         # Name - first line matching "Firstname Lastname" pattern
         name = None
         for line in texts_extracted:
-            if re.match(r'^[A-Z][a-z]+ [A-Z][a-z]+', line.strip()):
+            if re.match(r'^[A-Za-z]{3,}\s[A-Za-z\s]+$', line.strip()):
                 name = line.strip()
                 break
         
         dob_match = re.search(r'(?:DOB|D[OG]B|Date of Birth)[:\s/]*(\d{2}/\d{2}/\d{4})', all_text, re.IGNORECASE)
-        gender_match = re.search(r'\b(MALE|FEMALE|Male|Female)\b', all_text)
+        gender_match = re.search(r'\b(MALE|FEMALE)\b', all_text, re.IGNORECASE)
         
         return {
             "doc_number": aadhaar_match.group(1).replace(" ", "") if aadhaar_match else None,
@@ -189,14 +189,14 @@ class OCREngine:
         all_text = " ".join(texts_extracted)
         
         # EPIC format: 3 letters + 7 digits (e.g., ABC1234567)
-        epic_match = re.search(r'\b([A-Z]{3}\d{7})\b', all_text, re.IGNORECASE)
+        epic_match = re.search(r'\b([A-Z]{3}[-\s]?\d{7})\b', all_text, re.IGNORECASE)
         
         name_match = re.search(r'Name[:\s]+([A-Z\s\.]+?)(?:\n|Father|Age|$)', all_text, re.IGNORECASE)
         dob_match = re.search(r'(?:DOB|Date of Birth|Age)[:\s]+(\d{2}[-/]\d{2}[-/]\d{4})', all_text, re.IGNORECASE)
         gender_match = re.search(r'\b(MALE|FEMALE|M|F)\b', all_text, re.IGNORECASE)
         
         return {
-            "doc_number": epic_match.group(1).upper() if epic_match else None,
+            "doc_number": epic_match.group(1).upper().replace(" ", "").replace("-", "") if epic_match else None,
             "name": name_match.group(1).strip() if name_match else None,
             "dob": dob_match.group(1) if dob_match else None,
             "gender": gender_match.group(1).upper() if gender_match else None,
