@@ -7,7 +7,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
-import { ShieldCheck, KeyRound, Mail, ArrowRight } from "lucide-react";
+import { ShieldCheck, KeyRound, Mail, ArrowRight, Shield } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -56,77 +56,85 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Gradient */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-cyan-500/10 blur-[120px] rounded-full pointer-events-none" />
-
-      <div className="w-full max-w-md space-y-6 relative z-10">
-        {/* Brand Badge Header */}
+    <div className="min-h-screen bg-[#FDF6F0] flex items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-6">
+        {/* Official Brand Terminal Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex h-12 w-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 items-center justify-center text-cyan-400 mb-2">
-            <ShieldCheck className="h-7 w-7" />
+          <div className="inline-flex h-14 w-14 rounded-md bg-[#283733] border border-[#475853] items-center justify-center text-[#DBCEB1] mb-1 shadow-md">
+            <Shield className="h-8 w-8 stroke-[2.5]" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-100 tracking-tight">
-            Satya<span className="text-cyan-400">Scan</span> Terminal
+          <h1 className="text-2xl font-extrabold text-[#283733] uppercase tracking-wider flex items-center justify-center gap-1">
+            Satya<span className="text-[#475853]">Scan</span>
           </h1>
-          <p className="text-xs text-slate-400">Ministry of Home Affairs / SSB Official Login</p>
+          <p className="text-xs font-semibold text-[#71807A] uppercase tracking-widest">
+            Indian Border Security Checkpoint Terminal
+          </p>
         </div>
 
-        <Card className="border-slate-800 bg-slate-900/80 shadow-2xl backdrop-blur-xl">
-          <CardHeader>
-            <CardTitle>Checkpoint Authentication</CardTitle>
-            <CardDescription>Sign in to your authorized officer account</CardDescription>
+        <Card className="border border-[#71807A]/30 bg-white shadow-md">
+          <CardHeader className="border-b border-[#71807A]/20 pb-4">
+            <CardTitle className="text-base font-extrabold uppercase tracking-wider text-[#283733]">
+              Checkpoint Operator Authentication
+            </CardTitle>
+            <CardDescription className="text-xs text-[#71807A]">
+              Sign in to your authorized border officer terminal session.
+            </CardDescription>
           </CardHeader>
 
           <form onSubmit={handleSubmit(onSubmit)}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300">Email Address</label>
+            <CardContent className="space-y-4 pt-5">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-[#283733]">
+                  Operator Email Address
+                </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+                  <Mail className="absolute left-3 top-2.5 h-4 w-4 text-[#71807A]" />
                   <Input
                     {...register("email")}
                     type="email"
                     placeholder="officer@satyascan.local"
-                    className="pl-9"
+                    className="pl-9 bg-[#FCF5EE] border-[#71807A]/30 text-xs font-mono"
                   />
                 </div>
                 {errors.email && (
-                  <p className="text-xs text-rose-400">{errors.email.message}</p>
+                  <p className="text-xs text-[#B84A4A] font-semibold">{errors.email.message}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300">Password</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-[#283733]">
+                  Security Access Key
+                </label>
                 <div className="relative">
-                  <KeyRound className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+                  <KeyRound className="absolute left-3 top-2.5 h-4 w-4 text-[#71807A]" />
                   <Input
                     {...register("password")}
                     type="password"
                     placeholder="••••••••"
-                    className="pl-9"
+                    className="pl-9 bg-[#FCF5EE] border-[#71807A]/30 text-xs font-mono"
                   />
                 </div>
                 {errors.password && (
-                  <p className="text-xs text-rose-400">{errors.password.message}</p>
+                  <p className="text-xs text-[#B84A4A] font-semibold">{errors.password.message}</p>
                 )}
               </div>
             </CardContent>
 
-            <CardFooter className="flex flex-col space-y-4">
+            <CardFooter className="flex flex-col space-y-4 pt-2">
               <Button
                 type="submit"
+                variant="primary"
                 disabled={isSubmitting}
-                className="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold"
+                className="w-full py-5 text-sm uppercase tracking-wider font-extrabold bg-[#283733] hover:bg-[#475853]"
               >
-                {isSubmitting ? "Authenticating..." : "Sign In"}
+                {isSubmitting ? "Authenticating Session..." : "Sign In Terminal"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
 
-              <div className="text-center text-xs text-slate-400">
-                Need an account?{" "}
-                <Link to="/register" className="text-cyan-400 hover:underline font-semibold">
-                  Register Information
+              <div className="text-center text-xs text-[#71807A]">
+                Need account authorization?{" "}
+                <Link to="/register" className="text-[#475853] hover:underline font-bold">
+                  Account Provisioning Info
                 </Link>
               </div>
             </CardFooter>
@@ -134,29 +142,29 @@ export function LoginPage() {
         </Card>
 
         {/* Demo Preset Helper */}
-        <div className="glass-panel p-4 rounded-xl border border-slate-800 text-center space-y-2">
-          <p className="text-xs font-semibold text-slate-300">Quick Test Credentials</p>
+        <div className="p-4 rounded-md border border-[#71807A]/25 bg-[#FCF5EE] text-center space-y-2">
+          <p className="text-xs font-bold text-[#283733] uppercase tracking-wider">Quick Test Credentials</p>
           <div className="flex justify-center gap-2">
             <button
               onClick={fillAdmin}
               type="button"
-              className="text-[11px] bg-slate-800 hover:bg-slate-700 text-cyan-400 px-2.5 py-1 rounded border border-slate-700"
+              className="text-xs font-bold bg-[#283733] text-[#FDF6F0] px-3 py-1 rounded border border-[#475853]"
             >
-              Admin
+              ADMIN
             </button>
             <button
               onClick={fillOfficer}
               type="button"
-              className="text-[11px] bg-slate-800 hover:bg-slate-700 text-amber-400 px-2.5 py-1 rounded border border-slate-700"
+              className="text-xs font-bold bg-[#DBCEB1] text-[#283733] px-3 py-1 rounded border border-[#71807A]/40"
             >
-              Officer
+              OFFICER
             </button>
             <button
               onClick={fillSubmitter}
               type="button"
-              className="text-[11px] bg-slate-800 hover:bg-slate-700 text-emerald-400 px-2.5 py-1 rounded border border-slate-700"
+              className="text-xs font-bold bg-white text-[#283733] px-3 py-1 rounded border border-[#71807A]/40"
             >
-              Submitter
+              SUBMITTER
             </button>
           </div>
         </div>
@@ -164,3 +172,4 @@ export function LoginPage() {
     </div>
   );
 }
+

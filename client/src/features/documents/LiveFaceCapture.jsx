@@ -6,6 +6,8 @@ import { Camera } from "@mediapipe/camera_utils";
 import { documentsApi } from "./api";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
+import { Badge } from "../../components/ui/Badge";
+import { PageHeader } from "../../components/ui/PageHeader";
 import { Loader2, Camera as CameraIcon, CheckCircle2, AlertTriangle, ShieldCheck, RefreshCw, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -222,19 +224,15 @@ export function LiveFaceCapture() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <div className="space-y-1 text-center">
-        <h1 className="text-2xl font-bold text-slate-100 flex items-center justify-center gap-2">
-          <ShieldCheck className="h-6 w-6 text-cyan-400" />
-          Live Face Verification
-        </h1>
-        <p className="text-xs text-slate-400">
-          Complete the interactive head-turn challenge to verify identity against document photo.
-        </p>
-      </div>
+      <PageHeader
+        title="Live Biometric Head-Turn Challenge"
+        description="Verify identity against document photo using 4-step head rotation liveness challenge."
+        badge={<Badge variant="PASS">Step {step} of 4</Badge>}
+      />
 
-      <Card className="border-slate-800 bg-slate-900/90 backdrop-blur-xl shadow-2xl overflow-hidden">
-        <CardHeader className="text-center pb-2">
-          <CardTitle className="text-base text-slate-200">
+      <Card className="p-6 space-y-6 shadow-sm">
+        <div className="text-center space-y-1 border-b border-[#71807A]/20 pb-3">
+          <h2 className="text-sm font-bold text-[#283733] uppercase tracking-wider">
             {isSubmitting
               ? "Analyzing Biometric Match..."
               : isTimedOut
@@ -242,36 +240,31 @@ export function LiveFaceCapture() {
                 : webcamError
                   ? "Webcam Access Issue"
                   : statusText}
-          </CardTitle>
-          <CardDescription className="text-xs text-slate-400">
-            {!isTimedOut && !webcamError && !isSubmitting && (
-              <span>Time remaining: <strong className="text-cyan-400">{timeLeft}s</strong></span>
-            )}
-          </CardDescription>
-        </CardHeader>
+          </h2>
+          {!isTimedOut && !webcamError && !isSubmitting && (
+            <p className="text-xs text-[#71807A]">
+              Challenge Timeout: <strong className="text-[#2F7D5A] font-mono">{timeLeft}s</strong>
+            </p>
+          )}
+        </div>
 
-        <CardContent className="space-y-6 flex flex-col items-center">
-          {/* Progress Bar with Color Transition */}
+        <div className="space-y-6 flex flex-col items-center">
+          {/* Progress Bar */}
           <div className="w-full space-y-1.5">
-            <div className="flex justify-between text-xs font-semibold">
-              <span className="text-slate-400">Verification Progress</span>
-              <span className="font-mono text-cyan-400">{progress}%</span>
+            <div className="flex justify-between text-xs font-bold text-[#283733]">
+              <span className="uppercase tracking-wider">Challenge Progress</span>
+              <span className="font-mono text-[#2F7D5A]">{progress}%</span>
             </div>
-            <div className="w-full bg-slate-950 h-3 rounded-full overflow-hidden p-0.5 border border-slate-800">
+            <div className="w-full bg-[#FCF5EE] h-2.5 rounded-full overflow-hidden p-0.5 border border-[#71807A]/20">
               <div
-                className={`h-full rounded-full transition-all duration-500 bg-gradient-to-r ${progress < 40
-                    ? "from-red-500 to-amber-500"
-                    : progress < 80
-                      ? "from-amber-500 to-emerald-400"
-                      : "from-emerald-500 to-cyan-400"
-                  }`}
+                className="h-full rounded-full transition-all duration-500 bg-[#2F7D5A]"
                 style={{ width: `${progress}%` }}
               />
             </div>
           </div>
 
           {/* Webcam Container */}
-          <div className="relative w-full max-w-md aspect-[4/3] rounded-2xl overflow-hidden border-2 border-slate-800 bg-black flex items-center justify-center shadow-inner">
+          <div className="relative w-full max-w-md aspect-[4/3] rounded-md overflow-hidden border-2 border-[#475853] bg-black flex items-center justify-center shadow-sm">
             {capturedImage ? (
               <img src={capturedImage} alt="Captured face frame" className="w-full h-full object-cover" />
             ) : !webcamError && !isTimedOut ? (
@@ -289,22 +282,22 @@ export function LiveFaceCapture() {
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                   <div
                     className={`w-56 h-72 rounded-[45%] border-2 transition-all duration-300 ${faceDetected
-                        ? "border-emerald-400/80 bg-emerald-500/5 shadow-[0_0_30px_rgba(52,211,153,0.2)]"
-                        : "border-cyan-500/40 bg-cyan-500/5"
+                        ? "border-[#2F7D5A] bg-[#2F7D5A]/10 shadow-sm"
+                        : "border-[#DBCEB1] bg-black/10"
                       }`}
                   />
                 </div>
 
                 {/* Yaw angle indicator */}
-                <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center text-[11px] px-3 py-1.5 rounded-lg bg-black/60 backdrop-blur border border-slate-800 text-slate-300">
+                <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center text-[11px] px-3 py-1 rounded bg-[#283733]/90 text-[#FDF6F0] font-mono border border-[#475853]">
                   <span>Face: {faceDetected ? "Detected" : "Searching..."}</span>
-                  <span className="font-mono">Head Yaw: {currentYaw.toFixed(1)}°</span>
+                  <span>Head Yaw: {currentYaw.toFixed(1)}°</span>
                 </div>
               </>
             ) : (
-              <div className="p-6 text-center space-y-3">
-                <AlertTriangle className="h-10 w-10 text-amber-400 mx-auto" />
-                <p className="text-sm text-slate-300 font-medium">
+              <div className="p-6 text-center space-y-3 text-[#FDF6F0]">
+                <AlertTriangle className="h-10 w-10 text-[#C58A32] mx-auto" />
+                <p className="text-xs font-semibold">
                   {isTimedOut
                     ? "Verification timed out - please try again"
                     : "Webcam permission denied or camera not accessible."}
@@ -314,61 +307,62 @@ export function LiveFaceCapture() {
 
             {/* Submitting Loading Overlay */}
             {isSubmitting && (
-              <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-3">
-                <Loader2 className="h-10 w-10 text-cyan-400 animate-spin" />
-                <p className="text-sm font-semibold text-cyan-300">Analyzing Biometric Match...</p>
-                <p className="text-xs text-slate-400">Comparing face embedding against document photo</p>
+              <div className="absolute inset-0 bg-[#283733]/90 flex flex-col items-center justify-center p-6 text-center space-y-3 text-[#FDF6F0]">
+                <Loader2 className="h-10 w-10 text-[#DBCEB1] animate-spin" />
+                <p className="text-sm font-bold uppercase tracking-wider text-[#DBCEB1]">Comparing Face Biometrics...</p>
+                <p className="text-xs text-[#FDF6F0]/80">Evaluating facial embedding similarity against document photo</p>
               </div>
             )}
           </div>
 
           {/* Results Summary banner */}
           {matchResult && (
-            <div className="w-full p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between">
+            <div className="w-full p-4 rounded-md bg-[#2F7D5A]/15 border border-[#2F7D5A]/40 flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <CheckCircle2 className="h-6 w-6 text-emerald-400" />
+                <CheckCircle2 className="h-6 w-6 text-[#2F7D5A]" />
                 <div>
-                  <p className="text-sm font-bold text-emerald-300">Biometric Verification Complete</p>
-                  <p className="text-xs text-slate-300">{matchResult.notes}</p>
+                  <p className="text-xs font-bold text-[#2F7D5A] uppercase tracking-wider">Biometric Match Verified</p>
+                  <p className="text-xs text-[#283733] font-sans">{matchResult.notes}</p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-xs text-slate-400">Match Score</p>
-                <p className="text-lg font-bold font-mono text-emerald-400">
+              <div className="text-right font-mono">
+                <p className="text-[10px] text-[#71807A] uppercase">Match Score</p>
+                <p className="text-lg font-extrabold text-[#2F7D5A]">
                   {((matchResult.confidence || 0) * 100).toFixed(0)}%
                 </p>
               </div>
             </div>
           )}
-        </CardContent>
+        </div>
 
-        <CardFooter className="flex justify-between border-t border-slate-800 pt-4">
-          <Button variant="outline" size="sm" onClick={handleSkip} disabled={isSubmitting}>
+        <div className="flex items-center justify-between border-t border-[#71807A]/20 pt-4">
+          <Button variant="outline" size="sm" onClick={handleSkip} disabled={isSubmitting} className="text-xs">
             Skip face verification
           </Button>
 
           {(isTimedOut || webcamError) && (
-            <Button size="sm" onClick={handleRetry} className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold">
-              <RefreshCw className="h-4 w-4 mr-1" /> Retry Challenge
+            <Button size="sm" onClick={handleRetry} variant="gold" className="text-xs font-bold">
+              <RefreshCw className="h-3.5 w-3.5 mr-1" /> Retry Challenge
             </Button>
           )}
 
           {!isTimedOut && !webcamError && !isSubmitting && !matchResult && (
             <Button
               size="sm"
+              variant="secondary"
               onClick={() => {
-                // Manual fallback trigger for development / test convenience
                 setStep(5);
                 setProgress(100);
                 triggerCaptureAndVerify();
               }}
-              className="bg-slate-800 hover:bg-slate-700 text-xs text-slate-300"
+              className="text-xs font-semibold"
             >
               Capture Frame Now
             </Button>
           )}
-        </CardFooter>
+        </div>
       </Card>
     </div>
   );
 }
+

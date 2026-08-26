@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../components/ui/Button";
+import { Badge } from "../components/ui/Badge";
 import {
   ShieldCheck,
   Cpu,
@@ -12,30 +13,33 @@ import {
   ChevronRight,
   Eye,
   CheckCircle2,
+  Layers,
+  FileSearch,
+  Shield,
 } from "lucide-react";
 
 export function LandingPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-cyan-500 selection:text-slate-950">
-      {/* Top Header Navigation */}
-      <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-50 px-6 py-4">
+    <div className="min-h-screen bg-[#FDF6F0] text-[#283733] flex flex-col font-sans">
+      {/* Top Bar Header */}
+      <header className="bg-[#283733] text-[#FDF6F0] border-b border-[#475853] px-6 py-4 sticky top-0 z-50 shadow-md">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-cyan-900/30">
-              <ShieldCheck className="h-6 w-6 text-slate-950 stroke-[2.5]" />
+            <div className="h-10 w-10 rounded bg-[#DBCEB1] flex items-center justify-center text-[#283733] shadow-sm">
+              <Shield className="h-6 w-6 stroke-[2.5]" />
             </div>
             <div>
-              <span className="font-bold text-xl text-slate-100 tracking-tight">
-                Satya<span className="text-cyan-400">Scan</span>
-              </span>
-              <span className="text-xs text-slate-400 ml-2 hidden sm:inline-block">
-                Ministry of Home Affairs / SSB
-              </span>
+              <h1 className="font-extrabold text-xl text-[#FDF6F0] tracking-wider uppercase flex items-center gap-1">
+                Satya<span className="text-[#DBCEB1]">Scan</span>
+              </h1>
+              <p className="text-[10px] font-semibold tracking-wider text-[#DBCEB1] uppercase">
+                Ministry of Home Affairs / SSB Border Security Intelligence
+              </p>
             </div>
           </div>
           <Link to="/login">
-            <Button className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-6">
-              Terminal Login
+            <Button variant="gold" size="sm" className="font-bold px-5">
+              Access Secure Terminal
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
@@ -43,27 +47,25 @@ export function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative py-24 px-6 overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900/40 to-slate-950">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-cyan-500/10 blur-[140px] rounded-full pointer-events-none" />
-
-        <div className="max-w-5xl mx-auto text-center relative z-10 space-y-8">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 text-xs font-semibold uppercase tracking-wider">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            <span>SIH 2026 Problem Statement 26188</span>
+      <section className="py-20 px-6 bg-[#283733] text-[#FDF6F0] border-b border-[#475853] relative">
+        <div className="max-w-5xl mx-auto text-center space-y-6">
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded border border-[#DBCEB1]/40 bg-[#475853]/60 text-[#DBCEB1] text-xs font-bold uppercase tracking-widest">
+            <ShieldCheck className="h-4 w-4" />
+            <span>SIH 2026 Problem SIH26188 • Border Security Division</span>
           </div>
 
-          <h1 className="text-4xl sm:text-6xl font-extrabold text-slate-100 tracking-tight leading-tight">
-            SatyaScan: <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400">Truth at the Border</span>
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-[#FDF6F0] tracking-tight leading-tight">
+            SatyaScan: AI-Powered Document & Identity Verification Platform
           </h1>
 
-          <p className="text-lg sm:text-xl text-slate-300 max-w-3xl mx-auto font-normal leading-relaxed">
-            AI-powered document and identity verification system for border checkpoints. Real-time multi-layer forensic analysis providing instant confidence scoring for passports, visas, and identification passes.
+          <p className="text-base sm:text-lg text-[#FDF6F0]/80 max-w-3xl mx-auto font-sans leading-relaxed">
+            Enterprise-grade document forensic intelligence and biometric verification designed for Indian border security checkpoints. Multi-layer optical character recognition, checksum math, tampering detection, and face matching.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Link to="/login">
-              <Button size="lg" className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-base px-8 h-12 shadow-lg shadow-cyan-500/20">
-                Access Official Control Portal
+              <Button variant="gold" size="lg" className="font-extrabold text-sm px-8 h-12">
+                Access Official Checkpoint Terminal
                 <ChevronRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
@@ -71,68 +73,35 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* 3-Feature Strip */}
-      <section className="py-16 px-6 border-y border-slate-800/80 bg-slate-900/30">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="glass-card p-8 rounded-2xl border border-slate-800/80 space-y-4 hover:border-cyan-500/40 transition-colors">
-            <div className="h-12 w-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
-              <Cpu className="h-6 w-6" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-100">Explainable AI Analysis</h3>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              Transparent per-layer forensic breakdown across optical character recognition, checksum validation, tampering detection, and face matching.
-            </p>
-          </div>
-
-          <div className="glass-card p-8 rounded-2xl border border-slate-800/80 space-y-4 hover:border-cyan-500/40 transition-colors">
-            <div className="h-12 w-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-              <UserCheck className="h-6 w-6" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-100">Human-in-the-Loop Workflow</h3>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              Automated review queue routing for low-confidence or anomaly-flagged credentials, giving checkpoint officers final decision authority.
-            </p>
-          </div>
-
-          <div className="glass-card p-8 rounded-2xl border border-slate-800/80 space-y-4 hover:border-cyan-500/40 transition-colors">
-            <div className="h-12 w-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <Lock className="h-6 w-6" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-100">Sovereign & Compliant</h3>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              Built for Ministry of Home Affairs and Sashastra Seema Bal (SSB) requirements with full audit logging and offline air-gapped readiness.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* How it Works Section */}
-      <section className="py-20 px-6 max-w-7xl mx-auto w-full space-y-12">
-        <div className="text-center space-y-3">
-          <h2 className="text-3xl font-bold text-slate-100">Multi-Layer Verification Flow</h2>
-          <p className="text-slate-400 max-w-xl mx-auto">
-            From document submission to border officer decision in seconds.
+      {/* Multi-Layer Verification Pipeline Diagram */}
+      <section className="py-16 px-6 max-w-7xl mx-auto w-full space-y-8">
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl font-extrabold uppercase tracking-wider text-[#283733]">
+            Forensic Inspection Pipeline
+          </h2>
+          <p className="text-xs text-[#71807A] max-w-xl mx-auto">
+            Sequential AI verification layers evaluated before officer decision console.
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {[
-            { step: "01", title: "OCR Extraction", desc: "Reads MRZ data and textual fields", icon: FileCheck2 },
-            { step: "02", title: "Checksum Validation", desc: "Verifies official document math", icon: CheckCircle2 },
-            { step: "03", title: "Tampering Scan", desc: "Detects digital and physical edits", icon: Eye },
-            { step: "04", title: "Biometric Face Match", desc: "Compares holder photo with face", icon: UserCheck },
-            { step: "05", title: "Verdict Scoring", desc: "Generates PASS, REVIEW, or FAIL", icon: ShieldCheck },
+            { step: "01", title: "OCR Extraction", desc: "Extracts MRZ text & passport fields", icon: FileSearch },
+            { step: "02", title: "Validation Math", desc: "Verifies ICAO 9303 checksums", icon: CheckCircle2 },
+            { step: "03", title: "Tampering Analysis", desc: "ELA & copy-move SIFT inspection", icon: Layers },
+            { step: "04", title: "Biometric Match", desc: "InsightFace facial cosine similarity", icon: UserCheck },
+            { step: "05", title: "Risk & Review", desc: "PASS, REVIEW, or FAIL score", icon: ShieldCheck },
           ].map((item, idx) => {
             const IconComp = item.icon;
             return (
-              <div key={idx} className="glass-panel p-6 rounded-xl border border-slate-800 space-y-3 relative">
-                <span className="text-xs font-mono font-bold text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded">
+              <div key={idx} className="bg-white p-5 rounded-md border border-[#71807A]/25 space-y-2 shadow-sm">
+                <span className="text-[10px] font-mono font-bold text-[#283733] bg-[#FCF5EE] border border-[#71807A]/20 px-2 py-0.5 rounded">
                   {item.step}
                 </span>
-                <div className="pt-2">
-                  <IconComp className="h-6 w-6 text-slate-200 mb-2" />
-                  <h4 className="font-bold text-slate-100 text-sm">{item.title}</h4>
-                  <p className="text-xs text-slate-400 mt-1">{item.desc}</p>
+                <div className="pt-1">
+                  <IconComp className="h-5 w-5 text-[#475853] mb-1.5" />
+                  <h3 className="font-bold text-[#283733] text-xs uppercase tracking-wide">{item.title}</h3>
+                  <p className="text-[11px] text-[#71807A] mt-1">{item.desc}</p>
                 </div>
               </div>
             );
@@ -140,10 +109,48 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* Institutional Capability Cards */}
+      <section className="py-16 px-6 bg-[#FCF5EE] border-t border-[#71807A]/20">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white p-6 rounded-md border border-[#71807A]/25 space-y-3 shadow-sm">
+            <div className="h-10 w-10 rounded bg-[#283733] text-[#DBCEB1] flex items-center justify-center">
+              <Cpu className="h-5 w-5" />
+            </div>
+            <h3 className="text-base font-extrabold uppercase tracking-wide text-[#283733]">Document Intelligence</h3>
+            <p className="text-xs text-[#71807A] leading-relaxed">
+              Automated optical character recognition and field parsing across Indian passports, entry visas, national IDs, and driving credentials.
+            </p>
+          </div>
+
+          <div className="bg-white p-6 rounded-md border border-[#71807A]/25 space-y-3 shadow-sm">
+            <div className="h-10 w-10 rounded bg-[#283733] text-[#DBCEB1] flex items-center justify-center">
+              <UserCheck className="h-5 w-5" />
+            </div>
+            <h3 className="text-base font-extrabold uppercase tracking-wide text-[#283733]">Biometric Challenge</h3>
+            <p className="text-xs text-[#71807A] leading-relaxed">
+              4-step MediaPipe FaceMesh head rotation liveness tracking coupled with InsightFace cosine similarity match against document photos.
+            </p>
+          </div>
+
+          <div className="bg-white p-6 rounded-md border border-[#71807A]/25 space-y-3 shadow-sm">
+            <div className="h-10 w-10 rounded bg-[#283733] text-[#DBCEB1] flex items-center justify-center">
+              <Lock className="h-5 w-5" />
+            </div>
+            <h3 className="text-base font-extrabold uppercase tracking-wide text-[#283733]">Immutable Audit Trail</h3>
+            <p className="text-xs text-[#71807A] leading-relaxed">
+              Complete security event logging capturing every document submission, AI analysis layer result, and officer decision rationale.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="mt-auto border-t border-slate-800/80 py-8 px-6 text-center text-xs text-slate-400">
-        <p>SatyaScan System: Built for Ministry of Home Affairs / SSB Border Control (SIH 2026 Problem Statement 26188)</p>
+      <footer className="mt-auto bg-[#283733] text-[#FDF6F0] border-t border-[#475853] py-6 px-6 text-center text-xs">
+        <p className="font-mono text-[#DBCEB1]">
+          SatyaScan System Platform • Smart India Hackathon 2026 (SIH26188)
+        </p>
       </footer>
     </div>
   );
 }
+

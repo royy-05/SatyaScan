@@ -6,16 +6,22 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../..
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Skeleton } from "../../components/ui/Skeleton";
+import { ForensicImageInspector } from "../../components/ui/ForensicImageInspector";
+import { RiskScoreGauge } from "../../components/ui/RiskScoreGauge";
+import { IdentityFieldGrid } from "../../components/ui/IdentityFieldGrid";
+import { ForensicLayerCard } from "../../components/ui/ForensicLayerCard";
+import { AuditTimeline } from "../../components/ui/AuditTimeline";
+import { PageHeader } from "../../components/ui/PageHeader";
 import {
   FileText,
   RefreshCw,
   ArrowLeft,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
   UserCheck,
   ShieldCheck,
   History,
+  Shield,
+  Layers,
+  FileSearch,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,6 +32,7 @@ export function SubmissionDetailPage() {
   const [doc, setDoc] = useState(null);
   const [loading, setLoading] = useState(true);
   const [reverifying, setReverifying] = useState(false);
+  const [activeTab, setActiveTab] = useState("IDENTITY");
 
   const fetchDetail = async () => {
     setLoading(true);
@@ -63,10 +70,10 @@ export function SubmissionDetailPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-10 w-48" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Skeleton className="h-96 w-full lg:col-span-1" />
-          <Skeleton className="h-96 w-full lg:col-span-2" />
+        <Skeleton className="h-12 w-full" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <Skeleton className="h-[450px] lg:col-span-5 w-full" />
+          <Skeleton className="h-[450px] lg:col-span-7 w-full" />
         </div>
       </div>
     );
@@ -75,7 +82,7 @@ export function SubmissionDetailPage() {
   if (!doc) {
     return (
       <div className="text-center py-12 space-y-4">
-        <p className="text-slate-400">Document not found.</p>
+        <p className="text-[#71807A] text-sm font-semibold">Document case file not found.</p>
         <Button onClick={() => navigate("/app/submissions")}>Back to Submissions</Button>
       </div>
     );
@@ -94,227 +101,150 @@ export function SubmissionDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header Actions */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center space-x-3">
-          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back
-          </Button>
-          <div>
-            <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-              {doc.originalFilename}
-              <Badge variant={doc.status}>{doc.status}</Badge>
-            </h1>
-            <p className="text-xs text-slate-400">
-              ID: {doc.id} • {doc.docType} • SHA256: {doc.fileHash.substring(0, 12)}...
-            </p>
+      {/* Page Header */}
+      <PageHeader
+        title={doc.originalFilename}
+        badge={<Badge variant={doc.status}>{doc.status}</Badge>}
+        description={`Document ID: ${doc.id} • Type: ${doc.docType} • SHA256: ${doc.fileHash.substring(0, 16)}...`}
+        actions={
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+              <ArrowLeft className="h-4 w-4 mr-1" /> Back
+            </Button>
+
+            {!isFaceVerified && (
+              <Button
+                size="sm"
+                variant="gold"
+                onClick={() => navigate(`/app/submissions/${doc.id}/face-verify`)}
+              >
+                <UserCheck className="h-4 w-4 mr-1" /> Complete Biometric Verification
+              </Button>
+            )}
+
+            {user.role === "ADMIN" && (
+              <Button
+                size="sm"
+                variant="default"
+                onClick={handleReverify}
+                disabled={reverifying}
+              >
+                <RefreshCw className={`h-4 w-4 mr-1 ${reverifying ? "animate-spin" : ""}`} />
+                {reverifying ? "Re-verifying..." : "Re-run AI Engine"}
+              </Button>
+            )}
           </div>
-        </div>
+        }
+      />
 
-        {user.role === "ADMIN" && (
-          <Button
-            onClick={handleReverify}
-            disabled={reverifying}
-            className="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold"
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${reverifying ? "animate-spin" : ""}`} />
-            {reverifying ? "Re-verifying..." : "Re-verify AI Engine"}
-          </Button>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Image Preview & Overview */}
-        <div className="space-y-6 lg:col-span-1">
-          <Card className="border-slate-800 bg-slate-900/60 p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-300">Document Scan Preview</h3>
+      {/* Split Screen Workspace Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* LEFT 5 COLS: Forensic Image Inspector */}
+        <div className="lg:col-span-5 space-y-4">
+          <Card className="p-4 space-y-3">
+            <div className="flex items-center justify-between border-b border-[#71807A]/20 pb-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#283733]">
+                Document Image Scan
+              </span>
               {isFaceVerified ? (
-                <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px]">
-                  Face Verified ✓
+                <Badge variant="PASS" className="text-[10px]">
+                  Face Match Passed ✓
                 </Badge>
               ) : (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => navigate(`/app/submissions/${doc.id}/face-verify`)}
-                  className="text-xs border-cyan-500/40 text-cyan-400 hover:bg-cyan-950/40 font-semibold"
-                >
-                  <UserCheck className="h-3.5 w-3.5 mr-1" /> Complete Face Verification
-                </Button>
+                <Badge variant="REVIEW" className="text-[10px]">
+                  Face Check Pending
+                </Badge>
               )}
             </div>
-            <div className="rounded-lg overflow-hidden border border-slate-800 bg-black/40 flex items-center justify-center p-2 min-h-[220px]">
-              <img
-                src={imagePreviewUrl}
-                alt="Document preview"
-                className="max-h-72 w-full object-contain rounded"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = "https://via.placeholder.com/400x250/0f172a/94a3b8?text=Image+Preview+Unavailable";
-                }}
-              />
-            </div>
-            <div className="text-xs text-slate-400 space-y-1">
-              <p>Uploaded by: <span className="text-slate-200">{doc.submitter?.name || "System"}</span></p>
-              <p>MIME Type: <span className="text-slate-200">{doc.mimeType}</span></p>
-              <p>File Size: <span className="text-slate-200">{(doc.sizeBytes / 1024).toFixed(1)} KB</span></p>
+
+            <ForensicImageInspector src={imagePreviewUrl} alt={doc.originalFilename} />
+
+            <div className="text-[11px] font-mono text-[#71807A] space-y-1 bg-[#FCF5EE] p-3 rounded border border-[#71807A]/20">
+              <p><strong className="text-[#283733]">Uploaded By:</strong> {doc.submitter?.name || "System"}</p>
+              <p><strong className="text-[#283733]">MIME Format:</strong> {doc.mimeType}</p>
+              <p><strong className="text-[#283733]">File Size:</strong> {(doc.sizeBytes / 1024).toFixed(1)} KB</p>
+              <p className="truncate"><strong className="text-[#283733]">Hash:</strong> {doc.fileHash}</p>
             </div>
           </Card>
-
-          {/* Verdict Summary Card */}
-          {latestVerification && (
-            <Card className="border-slate-800 bg-slate-900/60 p-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-400">Overall Verdict</span>
-                <Badge variant={latestVerification.verdict}>{latestVerification.verdict}</Badge>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-xs text-slate-300 mb-1">
-                  <span>Confidence Score</span>
-                  <span className="font-mono font-bold text-cyan-400">
-                    {(latestVerification.overallScore * 100).toFixed(1)}%
-                  </span>
-                </div>
-                <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-500 ${
-                      latestVerification.verdict === "PASS"
-                        ? "bg-emerald-500"
-                        : latestVerification.verdict === "REVIEW"
-                        ? "bg-amber-500"
-                        : "bg-rose-500"
-                    }`}
-                    style={{ width: `${Math.min(100, latestVerification.overallScore * 100)}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="text-[11px] text-slate-500">
-                Engine Version: {latestVerification.engineVersion}
-              </div>
-            </Card>
-          )}
         </div>
 
-        {/* Right Column: Extracted Fields & DYNAMIC Layer Breakdown */}
-        <div className="space-y-6 lg:col-span-2">
-          {/* Extracted MRZ / Textual Fields */}
+        {/* RIGHT 7 COLS: Intelligence Panel & Forensic Tabs */}
+        <div className="lg:col-span-7 space-y-6">
+          {/* Risk Score Assessment Gauge */}
           {latestVerification && (
-            <Card className="border-slate-800 bg-slate-900/60">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Extracted Identity Fields</CardTitle>
-                <CardDescription>Structured textual data extracted by OCR engine</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800">
-                    <p className="text-[10px] text-slate-500 uppercase font-semibold">Full Name</p>
-                    <p className="text-sm font-semibold text-slate-100">{latestVerification.extractedName || "N/A"}</p>
-                  </div>
-                  <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800">
-                    <p className="text-[10px] text-slate-500 uppercase font-semibold">Document Number</p>
-                    <p className="text-sm font-mono font-semibold text-cyan-400">{latestVerification.extractedDocNumber || "N/A"}</p>
-                  </div>
-                  <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800">
-                    <p className="text-[10px] text-slate-500 uppercase font-semibold">Nationality</p>
-                    <p className="text-sm font-semibold text-slate-100">{latestVerification.extractedNationality || "N/A"}</p>
-                  </div>
-                  <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800">
-                    <p className="text-[10px] text-slate-500 uppercase font-semibold">Date of Birth</p>
-                    <p className="text-sm font-semibold text-slate-100">{latestVerification.extractedDob || "N/A"}</p>
-                  </div>
-                  <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800">
-                    <p className="text-[10px] text-slate-500 uppercase font-semibold">Expiration Date</p>
-                    <p className="text-sm font-semibold text-slate-100">{latestVerification.extractedExpiry || "N/A"}</p>
-                  </div>
-                  <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800">
-                    <p className="text-[10px] text-slate-500 uppercase font-semibold">Gender</p>
-                    <p className="text-sm font-semibold text-slate-100">{latestVerification.extractedGender || "N/A"}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <RiskScoreGauge
+              score={latestVerification.overallScore}
+              verdict={latestVerification.verdict}
+            />
           )}
 
-          {/* DYNAMIC Layer Verification Breakdown (Requirement #20) */}
-          {latestVerification && latestVerification.layers && (
-            <Card className="border-slate-800 bg-slate-900/60">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Forensic Analysis Layers</CardTitle>
-                <CardDescription>Multi-layer confidence scores evaluated dynamically</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {Object.entries(latestVerification.layers).map(([layerKey, layerData]) => {
-                    const isPassed = layerData?.passed !== false;
-                    const confidence = layerData?.confidence !== undefined ? layerData.confidence : 1.0;
-                    const notes = layerData?.notes || "No forensic anomalies detected.";
+          {/* Forensic Tabs Panel */}
+          {latestVerification && (
+            <Card className="p-5 space-y-4">
+              {/* Tab Navigation */}
+              <div className="flex items-center space-x-2 border-b border-[#71807A]/20 pb-3">
+                <Button
+                  size="sm"
+                  variant={activeTab === "IDENTITY" ? "primary" : "ghost"}
+                  onClick={() => setActiveTab("IDENTITY")}
+                  className="text-xs font-bold uppercase tracking-wider"
+                >
+                  <FileSearch className="h-3.5 w-3.5 mr-1.5" /> Identity Fields
+                </Button>
+                <Button
+                  size="sm"
+                  variant={activeTab === "FORENSICS" ? "primary" : "ghost"}
+                  onClick={() => setActiveTab("FORENSICS")}
+                  className="text-xs font-bold uppercase tracking-wider"
+                >
+                  <Layers className="h-3.5 w-3.5 mr-1.5" /> Forensic Layers
+                </Button>
+                <Button
+                  size="sm"
+                  variant={activeTab === "AUDIT" ? "primary" : "ghost"}
+                  onClick={() => setActiveTab("AUDIT")}
+                  className="text-xs font-bold uppercase tracking-wider"
+                >
+                  <History className="h-3.5 w-3.5 mr-1.5" /> Case History
+                </Button>
+              </div>
 
-                    return (
-                      <div
-                        key={layerKey}
-                        className={`p-4 rounded-xl border transition-all ${
-                          isPassed
-                            ? "bg-slate-950/50 border-slate-800"
-                            : "bg-rose-950/20 border-rose-800/40"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                            {layerKey} Layer
-                          </span>
-                          <div className="flex items-center space-x-1.5">
-                            {isPassed ? (
-                              <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                            ) : (
-                              <XCircle className="h-4 w-4 text-rose-400" />
-                            )}
-                            <span
-                              className={`text-xs font-bold font-mono ${
-                                isPassed ? "text-emerald-400" : "text-rose-400"
-                              }`}
-                            >
-                              {(confidence * 100).toFixed(0)}%
-                            </span>
-                          </div>
-                        </div>
-
-                        <p className="text-xs text-slate-400">{notes}</p>
-                      </div>
-                    );
-                  })}
+              {/* TAB 1: IDENTITY */}
+              {activeTab === "IDENTITY" && (
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#71807A]">
+                    OCR Extracted Credentials
+                  </h3>
+                  <IdentityFieldGrid extracted={latestVerification} />
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              )}
 
-          {/* Review Decisions History */}
-          {doc.reviewDecisions && doc.reviewDecisions.length > 0 && (
-            <Card className="border-slate-800 bg-slate-900/60">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <History className="h-4 w-4 text-cyan-400" />
-                  Officer Review History
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {doc.reviewDecisions.map((rd) => (
-                  <div key={rd.id} className="p-3 rounded-lg bg-slate-950 border border-slate-800 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-200">
-                        Officer {rd.reviewer?.name || "Reviewer"}
-                      </span>
-                      <Badge variant={rd.decision === "APPROVE" ? "PASS" : "FAIL"}>
-                        {rd.decision}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-slate-300">{rd.notes}</p>
-                    <p className="text-[10px] text-slate-500">{new Date(rd.createdAt).toLocaleString()}</p>
+              {/* TAB 2: FORENSICS */}
+              {activeTab === "FORENSICS" && latestVerification.layers && (
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#71807A]">
+                    Forensic Inspection Layers
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {Object.entries(latestVerification.layers).map(([layerKey, layerData]) => (
+                      <ForensicLayerCard key={layerKey} layerKey={layerKey} layerData={layerData} />
+                    ))}
                   </div>
-                ))}
-              </CardContent>
+                </div>
+              )}
+
+              {/* TAB 3: AUDIT */}
+              {activeTab === "AUDIT" && (
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#71807A]">
+                    Officer Decisions & History
+                  </h3>
+                  <AuditTimeline
+                    decisions={doc.reviewDecisions}
+                    verifications={doc.verifications}
+                  />
+                </div>
+              )}
             </Card>
           )}
         </div>
@@ -322,3 +252,4 @@ export function SubmissionDetailPage() {
     </div>
   );
 }
+

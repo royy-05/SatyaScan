@@ -1,110 +1,97 @@
 import React, { useEffect, useState } from "react";
 import { adminApi } from "./api";
-import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/Card";
+import { Card } from "../../components/ui/Card";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "../../components/ui/Table";
+import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
-import { Input } from "../../components/ui/Input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/Select";
 import { Skeleton } from "../../components/ui/Skeleton";
-import { Activity, Filter, ChevronLeft, ChevronRight } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../components/ui/Dialog";
+import { PageHeader } from "../../components/ui/PageHeader";
+import { Shield, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 
 export function AdminAuditPage() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [entityType, setEntityType] = useState("ALL");
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
+  const [selectedMeta, setSelectedMeta] = useState(null);
 
-  const fetchLogs = async () => {
+  const fetchAuditLogs = async () => {
     setLoading(true);
     try {
-      const params = { page, pageSize: 15 };
-      if (entityType !== "ALL") params.entityType = entityType;
-
-      const res = await adminApi.getAuditLogs(params);
+      const res = await adminApi.getAuditLogs({ page, pageSize: 15 });
       setLogs(res.data || []);
       setMeta(res.meta || { page: 1, totalPages: 1, total: 0 });
     } catch (_err) {
-      // Handled in interceptor toast
+      // Handled in interceptor
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchLogs();
-  }, [page, entityType]);
+    fetchAuditLogs();
+  }, [page]);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
-            <Activity className="h-6 w-6 text-cyan-400" />
-            System Audit Logs
-          </h1>
-          <p className="text-sm text-slate-400">
-            Immutable forensic event timeline capturing system activity.
-          </p>
-        </div>
+      <PageHeader
+        title="Security & Immutable Audit Trail"
+        description="Tamper-proof audit logs recording every document upload, AI verification, and officer review."
+        badge={<Badge variant="default">Audit Vault</Badge>}
+      />
 
-        <div className="w-48">
-          <Select value={entityType} onValueChange={(val) => { setEntityType(val); setPage(1); }}>
-            <SelectTrigger className="h-9 bg-slate-900">
-              <SelectValue placeholder="Entity Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">All Entity Types</SelectItem>
-              <SelectItem value="Document">Document</SelectItem>
-              <SelectItem value="User">User</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <Card className="border-slate-800 bg-slate-900/60 overflow-hidden">
+      <Card className="p-0 overflow-hidden border border-[#71807A]/25 bg-white">
         {loading ? (
           <div className="p-6 space-y-4">
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-12 w-full" />
           </div>
-        ) : logs.length === 0 ? (
-          <div className="p-12 text-center text-slate-400">No audit entries found.</div>
         ) : (
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-[#FCF5EE] border-b border-[#71807A]/20">
               <TableRow>
-                <TableHead>Timestamp</TableHead>
-                <TableHead>Actor</TableHead>
-                <TableHead>Action</TableHead>
-                <TableHead>Target Entity</TableHead>
-                <TableHead>Metadata</TableHead>
-                <TableHead>IP Address</TableHead>
+                <TableHead className="text-[#283733] font-bold">Timestamp</TableHead>
+                <TableHead className="text-[#283733] font-bold">Actor</TableHead>
+                <TableHead className="text-[#283733] font-bold">Action Event</TableHead>
+                <TableHead className="text-[#283733] font-bold">Entity Type</TableHead>
+                <TableHead className="text-[#283733] font-bold">IP Address</TableHead>
+                <TableHead className="text-right text-[#283733] font-bold">Metadata</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {logs.map((log) => (
-                <TableRow key={log.id}>
-                  <TableCell className="text-xs text-slate-400 font-mono">
+                <TableRow key={log.id} className="hover:bg-[#FCF5EE]/50">
+                  <TableCell className="text-xs font-mono text-[#71807A]">
                     {new Date(log.createdAt).toLocaleString()}
                   </TableCell>
-                  <TableCell>
-                    <p className="text-xs font-semibold text-slate-200">{log.actor?.name || "System"}</p>
-                    <p className="text-[10px] text-slate-400">{log.actor?.email}</p>
+                  <TableCell className="text-xs font-mono text-[#283733]">
+                    {log.user?.email || "SYSTEM"}
                   </TableCell>
                   <TableCell>
-                    <span className="font-mono text-xs font-semibold text-cyan-400">
+                    <Badge variant="secondary" className="font-mono text-[10px]">
                       {log.action}
-                    </span>
+                    </Badge>
                   </TableCell>
-                  <TableCell className="text-xs text-slate-300">
-                    {log.entityType}:{log.entityId?.substring(0, 8)}...
+                  <TableCell className="text-xs text-[#283733] font-semibold">
+                    {log.entityType}
                   </TableCell>
-                  <TableCell className="text-xs text-slate-400 font-mono max-w-xs truncate">
-                    {log.metadata ? JSON.stringify(log.metadata) : "N/A"}
+                  <TableCell className="text-xs font-mono text-[#71807A]">
+                    {log.ipAddress || "127.0.0.1"}
                   </TableCell>
-                  <TableCell className="text-xs text-slate-400 font-mono">
-                    {log.ipAddress || "Internal"}
+                  <TableCell className="text-right">
+                    {log.metadata ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setSelectedMeta(log.metadata)}
+                        className="text-xs text-[#475853]"
+                      >
+                        <Eye className="h-3.5 w-3.5 mr-1" /> View Payload
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-[#71807A] font-mono">N/A</span>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -115,10 +102,10 @@ export function AdminAuditPage() {
 
       {/* Pagination Footer */}
       {meta.totalPages > 1 && (
-        <div className="flex items-center justify-between text-xs text-slate-400">
+        <div className="flex items-center justify-between text-xs text-[#71807A]">
           <p>
-            Showing page <span className="font-semibold text-slate-200">{meta.page}</span> of{" "}
-            <span className="font-semibold text-slate-200">{meta.totalPages}</span> ({meta.total} total)
+            Showing page <span className="font-bold text-[#283733]">{meta.page}</span> of{" "}
+            <span className="font-bold text-[#283733]">{meta.totalPages}</span> ({meta.total} total log records)
           </p>
           <div className="flex items-center space-x-2">
             <Button
@@ -140,6 +127,20 @@ export function AdminAuditPage() {
           </div>
         </div>
       )}
+
+      {/* Metadata JSON Modal */}
+      <Dialog open={!!selectedMeta} onOpenChange={() => setSelectedMeta(null)}>
+        <DialogContent className="bg-[#283733] text-[#FDF6F0] border-[#475853] max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-bold uppercase tracking-wider text-[#DBCEB1]">
+              Event Metadata Payload JSON
+            </DialogTitle>
+          </DialogHeader>
+          <pre className="p-4 bg-black/50 rounded text-xs font-mono text-[#DBCEB1] overflow-x-auto max-h-96">
+            {JSON.stringify(selectedMeta, null, 2)}
+          </pre>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -7,7 +7,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from "../../components/ui/Button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/Select";
 import { Badge } from "../../components/ui/Badge";
-import { UploadCloud, FileText, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
+import { PageHeader } from "../../components/ui/PageHeader";
+import { UploadCloud, FileText, CheckCircle2, AlertTriangle, Loader2, ShieldCheck, FileSearch } from "lucide-react";
 import { toast } from "sonner";
 
 export function SubmitPage() {
@@ -113,92 +114,101 @@ export function SubmitPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-slate-100">Submit Document for Verification</h1>
-        <p className="text-sm text-slate-400">
-          Upload passport, visa, or identity pass for AI multi-layer analysis.
-        </p>
-      </div>
+      <PageHeader
+        title="Document Scanning Workstation"
+        description="Ingest passport, visa, or identity credential for AI multi-layer analysis."
+        badge={<Badge variant="PASS">Ingestion Workstation</Badge>}
+      />
 
-      <Card className="border-slate-800 bg-slate-900/80 backdrop-blur-xl shadow-xl">
-        <form onSubmit={handleSubmit}>
-          <CardHeader>
-            <CardTitle className="text-lg">Document Details & Image Upload</CardTitle>
-            <CardDescription>Select document type and attach high-resolution photo or scan.</CardDescription>
-          </CardHeader>
+      <Card className="p-6 space-y-6 shadow-sm">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2 border-b border-[#71807A]/20 pb-4">
+            <h2 className="text-sm font-bold text-[#283733] uppercase tracking-wider">
+              Document Type & Scan Ingestion
+            </h2>
+            <p className="text-xs text-[#71807A]">
+              Select document type and attach high-resolution photo or scan.
+            </p>
+          </div>
 
-          <CardContent className="space-y-6">
-            {/* Document Type Selector */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-300">Document Type</label>
-              <Select value={selectedType} onValueChange={setSelectedType} disabled={uploading || !!submittedDocId}>
-                <SelectTrigger className="w-full bg-slate-950">
-                  <SelectValue placeholder="Select document type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {docTypes.map((dt) => (
-                    <SelectItem key={dt.code} value={dt.code}>
-                      {dt.label} ({dt.code})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Document Type Selector */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-[#283733]">
+              Document Category
+            </label>
+            <Select value={selectedType} onValueChange={setSelectedType} disabled={uploading || !!submittedDocId}>
+              <SelectTrigger className="w-full bg-[#FCF5EE] border-[#71807A]/30">
+                <SelectValue placeholder="Select document type" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border-[#71807A]/30">
+                {docTypes.map((dt) => (
+                  <SelectItem key={dt.code} value={dt.code}>
+                    {dt.label} ({dt.code})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            {/* Drag & Drop File Area */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-300">Document Image (JPEG, PNG, WEBP, max 10MB)</label>
-              
-              <div
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={handleDrop}
-                className="border-2 border-dashed border-slate-700 hover:border-cyan-500/60 rounded-xl p-8 text-center bg-slate-950/50 transition-colors cursor-pointer relative"
-              >
-                <input
-                  type="file"
-                  accept="image/jpeg,.jpg,.jpeg,image/png,image/webp, application/pdf,.pdf"
-                  onChange={handleFileChange}
-                  disabled={uploading || !!submittedDocId}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
+          {/* Drag & Drop File Area */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-[#283733]">
+              Document Image Scan (JPEG, PNG, WEBP, PDF - max 10MB)
+            </label>
 
-                {previewUrl ? (
-                  <div className="space-y-3">
-                    <img
-                      src={previewUrl}
-                      alt="Selected document"
-                      className="max-h-48 mx-auto rounded-lg border border-slate-700 object-contain"
-                    />
-                    <p className="text-xs text-slate-300 font-medium">{selectedFile?.name}</p>
-                    <p className="text-[11px] text-slate-500">Click or drag a new image to replace</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3 pointer-events-none">
-                    <div className="h-12 w-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto text-cyan-400">
-                      <UploadCloud className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-200">Drag & drop document image here</p>
-                      <p className="text-xs text-slate-400 mt-1">or click to browse local files</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <div
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleDrop}
+              className="border-2 border-dashed border-[#71807A]/40 hover:border-[#475853] rounded-md p-8 text-center bg-[#FCF5EE]/60 transition-colors cursor-pointer relative"
+            >
+              <input
+                type="file"
+                accept="image/jpeg,.jpg,.jpeg,image/png,image/webp,application/pdf,.pdf"
+                onChange={handleFileChange}
+                disabled={uploading || !!submittedDocId}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
 
-            {/* Live Socket Status Message */}
-            {(uploading || submittedDocId) && (
-              <div className="glass-panel p-4 rounded-xl border border-cyan-500/30 flex items-center space-x-3 bg-cyan-950/20">
-                <Loader2 className="h-5 w-5 text-cyan-400 animate-spin shrink-0" />
-                <div className="text-xs space-y-0.5">
-                  <p className="font-semibold text-cyan-300">Live AI Verification Status</p>
-                  <p className="text-slate-300">{statusMessage}</p>
+              {previewUrl ? (
+                <div className="space-y-3">
+                  <img
+                    src={previewUrl}
+                    alt="Selected document"
+                    className="max-h-48 mx-auto rounded border border-[#71807A]/30 object-contain bg-white p-1"
+                  />
+                  <p className="text-xs font-bold text-[#283733] font-mono">{selectedFile?.name}</p>
+                  <p className="text-[11px] text-[#71807A]">Click or drag a new image to replace</p>
                 </div>
-              </div>
-            )}
-          </CardContent>
+              ) : (
+                <div className="space-y-3 pointer-events-none">
+                  <div className="h-12 w-12 rounded bg-[#283733] text-[#DBCEB1] flex items-center justify-center mx-auto shadow-sm">
+                    <UploadCloud className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-[#283733]">
+                      Drag & drop document scan image here
+                    </p>
+                    <p className="text-xs text-[#71807A] mt-1">or click to browse local files</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
-          <CardFooter className="flex justify-end space-x-3 border-t border-slate-800 pt-4">
+          {/* Vertical Pipeline Verification Status */}
+          {(uploading || submittedDocId) && (
+            <div className="p-4 rounded-md border border-[#475853] bg-[#283733] text-[#FDF6F0] space-y-3 shadow-sm">
+              <div className="flex items-center space-x-2 border-b border-[#475853] pb-2">
+                <Loader2 className="h-4 w-4 text-[#DBCEB1] animate-spin shrink-0" />
+                <span className="text-xs font-bold uppercase tracking-wider text-[#DBCEB1]">
+                  AI Forensic Pipeline Active
+                </span>
+              </div>
+              <p className="text-xs font-mono text-[#FDF6F0]">{statusMessage}</p>
+            </div>
+          )}
+
+          <div className="flex justify-end space-x-3 pt-4 border-t border-[#71807A]/20">
             <Button
               type="button"
               variant="outline"
@@ -209,14 +219,16 @@ export function SubmitPage() {
             </Button>
             <Button
               type="submit"
+              variant="gold"
               disabled={!selectedFile || uploading || !!submittedDocId}
-              className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold"
+              className="px-6"
             >
-              {uploading ? "Uploading..." : "Submit for Verification"}
+              {uploading ? "Ingesting..." : "Execute Verification Pipeline"}
             </Button>
-          </CardFooter>
+          </div>
         </form>
       </Card>
     </div>
   );
 }
+

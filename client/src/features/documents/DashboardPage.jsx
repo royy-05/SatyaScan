@@ -4,10 +4,11 @@ import { useAuth } from "../../hooks/useAuth";
 import { documentsApi } from "./api";
 import { reviewsApi } from "../reviews/api";
 import { adminApi } from "../admin/api";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/Card";
+import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Badge } from "../../components/ui/Badge";
 import { Skeleton } from "../../components/ui/Skeleton";
+import { StatCard } from "../../components/ui/StatCard";
 import {
   UploadCloud,
   FileCheck2,
@@ -18,6 +19,8 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
+  ShieldCheck,
+  FileText,
 } from "lucide-react";
 
 export function DashboardPage() {
@@ -65,40 +68,45 @@ export function DashboardPage() {
     return (
       <div className="space-y-6">
         <Skeleton className="h-24 w-full" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-28 w-full" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Welcome Banner */}
-      <div className="glass-panel p-6 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-100">
-            Welcome, <span className="text-cyan-400">{user.name}</span>
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Logged in as <span className="font-semibold text-slate-300">{user.role}</span> on SSB Border Control Station.
+    <div className="space-y-6">
+      {/* Welcome Operational Banner */}
+      <div className="bg-[#283733] text-[#FDF6F0] p-6 rounded-md border border-[#475853] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
+        <div className="space-y-1">
+          <div className="flex items-center space-x-2">
+            <ShieldCheck className="h-6 w-6 text-[#DBCEB1]" />
+            <h1 className="text-xl font-bold tracking-tight">
+              Border Security Operations Console
+            </h1>
+          </div>
+          <p className="text-xs text-[#DBCEB1]/80">
+            Active User: <span className="font-bold text-[#FDF6F0]">{user.name}</span> • Role:{" "}
+            <span className="font-mono text-[#DBCEB1] font-semibold">{user.role}</span> • Station SSB Checkpoint #04
           </p>
         </div>
 
         {user.role === "SUBMITTER" && (
           <Link to="/app/submit">
-            <Button className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold">
+            <Button variant="gold" className="px-5">
               <UploadCloud className="mr-2 h-4 w-4" />
-              New Document Submission
+              New Credential Scan
             </Button>
           </Link>
         )}
 
         {(user.role === "OFFICER" || user.role === "ADMIN") && (
           <Link to="/app/reviews/queue">
-            <Button className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold">
+            <Button variant="gold" className="px-5">
               <ShieldAlert className="mr-2 h-4 w-4" />
               Review Queue ({queueCount})
             </Button>
@@ -108,83 +116,75 @@ export function DashboardPage() {
 
       {/* Role-Specific Metric Cards */}
       {user.role === "ADMIN" && adminStats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="border-slate-800 bg-slate-900/60">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400">Total Submissions</CardTitle>
-              <FileCheck2 className="h-4 w-4 text-cyan-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-100">{adminStats.totalDocs}</div>
-              <p className="text-xs text-slate-500 mt-1">Total documents ingested</p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            title="Total Submissions"
+            value={adminStats.totalDocs}
+            description="Total documents ingested into system"
+            icon={FileCheck2}
+            valueColor="text-[#283733]"
+          />
 
-          <Card className="border-slate-800 bg-slate-900/60">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400">Flag Rate</CardTitle>
-              <AlertCircle className="h-4 w-4 text-amber-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-amber-400">{adminStats.flagRate}%</div>
-              <p className="text-xs text-slate-500 mt-1">Anomalies or low-confidence flags</p>
-            </CardContent>
-          </Card>
+          <StatCard
+            title="Anomaly Flag Rate"
+            value={`${adminStats.flagRate}%`}
+            description="Flagged for manual review"
+            icon={AlertCircle}
+            valueColor="text-[#C58A32]"
+          />
 
-          <Card className="border-slate-800 bg-slate-900/60">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400">Review Queue</CardTitle>
-              <ShieldAlert className="h-4 w-4 text-rose-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-100">{queueCount}</div>
-              <p className="text-xs text-slate-500 mt-1">Pending officer decisions</p>
-            </CardContent>
-          </Card>
+          <StatCard
+            title="Review Queue"
+            value={queueCount}
+            description="Pending officer review decisions"
+            icon={ShieldAlert}
+            valueColor="text-[#B84A4A]"
+          />
 
-          <Card className="border-slate-800 bg-slate-900/60">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400">Officer Throughput</CardTitle>
-              <Users className="h-4 w-4 text-emerald-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-emerald-400">{adminStats.officerThroughput}</div>
-              <p className="text-xs text-slate-500 mt-1">Avg reviews per active officer</p>
-            </CardContent>
-          </Card>
+          <StatCard
+            title="Officer Throughput"
+            value={adminStats.officerThroughput}
+            description="Avg decisions per active officer"
+            icon={Users}
+            valueColor="text-[#2F7D5A]"
+          />
         </div>
       )}
 
-      {/* Submitter & Officer Quick View */}
+      {/* Recent Submissions Activity Feed */}
       {(user.role === "SUBMITTER" || user.role === "OFFICER") && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-slate-100">Recent Submissions</h3>
-            <Link to="/app/submissions" className="text-xs text-cyan-400 hover:underline flex items-center">
-              View all <ArrowRight className="ml-1 h-3 w-3" />
+            <h3 className="text-base font-bold text-[#283733] tracking-wide uppercase">
+              Recent Verification Activity
+            </h3>
+            <Link to="/app/submissions" className="text-xs text-[#475853] hover:underline font-semibold flex items-center">
+              View All Submissions <ArrowRight className="ml-1 h-3.5 w-3.5" />
             </Link>
           </div>
 
           {recentDocs.length === 0 ? (
-            <Card className="border-slate-800 p-8 text-center text-slate-400">
-              No recent documents found. Click "New Document Submission" to upload.
+            <Card className="p-8 text-center text-[#71807A] text-xs">
+              No recent documents found. Click "New Credential Scan" to upload a document.
             </Card>
           ) : (
-            <div className="grid grid-cols-1 gap-3">
+            <div className="space-y-2.5">
               {recentDocs.map((doc) => {
                 const latestVer = doc.verifications?.[0];
                 return (
                   <div
                     key={doc.id}
-                    className="glass-card p-4 rounded-xl border border-slate-800 flex items-center justify-between hover:border-slate-700 transition-colors"
+                    className="p-4 bg-white border border-[#71807A]/25 rounded-md flex items-center justify-between hover:border-[#475853] transition-colors shadow-sm"
                   >
                     <div className="flex items-center space-x-4">
-                      <div className="h-10 w-10 rounded-lg bg-slate-800 flex items-center justify-center text-cyan-400">
-                        <FileCheck2 className="h-5 w-5" />
+                      <div className="h-9 w-9 rounded bg-[#FCF5EE] border border-[#71807A]/20 flex items-center justify-center text-[#475853]">
+                        <FileText className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-slate-200">{doc.originalFilename}</p>
-                        <p className="text-xs text-slate-400">{doc.docType} • {new Date(doc.createdAt).toLocaleDateString()}</p>
+                        <p className="text-xs font-bold text-[#283733]">{doc.originalFilename}</p>
+                        <p className="text-[11px] font-mono text-[#71807A]">
+                          {doc.docType} • {new Date(doc.createdAt).toLocaleDateString()}
+                        </p>
                       </div>
                     </div>
 
@@ -197,7 +197,9 @@ export function DashboardPage() {
                         <Badge variant={doc.status}>{doc.status}</Badge>
                       )}
                       <Link to={`/app/submissions/${doc.id}`}>
-                        <Button size="sm" variant="ghost">Details</Button>
+                        <Button size="sm" variant="outline" className="text-xs">
+                          Inspect
+                        </Button>
                       </Link>
                     </div>
                   </div>
@@ -210,3 +212,4 @@ export function DashboardPage() {
     </div>
   );
 }
+

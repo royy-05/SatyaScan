@@ -21,6 +21,22 @@ export default {
     },
     extend: {
       colors: {
+        satya: {
+          primary: "#475853",
+          dark: "#283733",
+          gold: "#DBCEB1",
+          ivory: "#FDF6F0",
+          cream: "#FCF5EE",
+          sage: "#71807A",
+          white: "#FFFFFF",
+        },
+        status: {
+          pass: "#2F7D5A",
+          review: "#C58A32",
+          fail: "#B84A4A",
+          info: "#527A8C",
+          processing: "#64748B",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -54,6 +70,10 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+      },
+      fontFamily: {
+        sans: ["Inter", "Public Sans", "sans-serif"],
+        mono: ["JetBrains Mono", "Roboto Mono", "monospace"],
       },
       borderRadius: {
         lg: "var(--radius)",

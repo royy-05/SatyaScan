@@ -1,62 +1,35 @@
 import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { adminApi } from "./api";
-import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/Card";
+import { Card } from "../../components/ui/Card";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "../../components/ui/Table";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/Dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/Select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../../components/ui/Dialog";
 import { Skeleton } from "../../components/ui/Skeleton";
-import { Users, UserPlus, Search, Shield, CheckCircle, XCircle } from "lucide-react";
+import { PageHeader } from "../../components/ui/PageHeader";
+import { UserPlus } from "lucide-react";
 import { toast } from "sonner";
-
-const createUserSchema = z.object({
-  email: z.string().email("Valid email address required"),
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  password: z
-    .string()
-    .min(10, "Password must be at least 10 characters long")
-    .regex(/[a-zA-Z]/, "Password must contain at least one letter")
-    .regex(/[0-9]/, "Password must contain at least one number"),
-  role: z.enum(["SUBMITTER", "OFFICER", "ADMIN"]),
-});
 
 export function AdminUsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm({
-    resolver: zodResolver(createUserSchema),
-    defaultValues: {
-      email: "",
-      name: "",
-      password: "",
-      role: "SUBMITTER",
-    },
+  const [openModal, setOpenModal] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "OFFICER",
   });
-
-  const selectedRole = watch("role");
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await adminApi.getUsers({ search });
+      const res = await adminApi.getUsers();
       setUsers(res.data || []);
     } catch (_err) {
-      // Interceptor toast handles error
+      // Handled in interceptor
     } finally {
       setLoading(false);
     }
@@ -64,91 +37,137 @@ export function AdminUsersPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, [search]);
+  }, []);
 
-  const onCreateUser = async (data) => {
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
     try {
-      await adminApi.createUser(data);
-      toast.success(`User ${data.name} created successfully!`);
-      setCreateDialogOpen(false);
-      reset();
+      await adminApi.createUser(formData);
+      toast.success("User account created successfully!");
+      setOpenModal(false);
+      setFormData({ name: "", email: "", password: "", role: "OFFICER" });
       fetchUsers();
     } catch (_err) {
-      // Interceptor toast handles error
+      // Handled in interceptor
     }
   };
 
-  const toggleUserActive = async (userId, currentActive) => {
+  const handleToggleActive = async (user) => {
     try {
-      await adminApi.updateUser(userId, { isActive: !currentActive });
-      toast.success("User active status updated");
+      await adminApi.updateUser(user.id, { isActive: !user.isActive });
+      toast.success(`User status updated for ${user.name}`);
       fetchUsers();
     } catch (_err) {
-      // Interceptor toast handles error
+      // Handled in interceptor
     }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
-            <Users className="h-6 w-6 text-cyan-400" />
-            User Management Console
-          </h1>
-          <p className="text-sm text-slate-400">
-            Create, manage roles, and activate/deactivate checkpoint personnel accounts.
-          </p>
-        </div>
+      <PageHeader
+        title="Official User Management Station"
+        description="Provision accounts, assign RBAC roles, and manage border checkpoint operator access."
+        actions={
+          <Dialog open={openModal} onOpenChange={setOpenModal}>
+            <DialogTrigger asChild>
+              <Button variant="gold" size="sm" className="font-bold">
+                <UserPlus className="h-4 w-4 mr-1.5" /> Provision New Account
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-white border-[#71807A]/30 text-[#283733]">
+              <DialogHeader>
+                <DialogTitle className="text-base font-extrabold uppercase tracking-wider text-[#283733]">
+                  Provision Operator Account
+                </DialogTitle>
+              </DialogHeader>
 
-        <Button
-          onClick={() => setCreateDialogOpen(true)}
-          className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold"
-        >
-          <UserPlus className="h-4 w-4 mr-2" />
-          Create New User
-        </Button>
-      </div>
+              <form onSubmit={handleCreateUser} className="space-y-4 pt-2">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase tracking-wider text-[#283733]">Full Name</label>
+                  <Input
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Officer Vikram Singh"
+                    className="bg-[#FCF5EE] border-[#71807A]/30 text-xs"
+                  />
+                </div>
 
-      <Card className="border-slate-800 bg-slate-900/60 overflow-hidden">
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-          <div className="relative w-72">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
-            <Input
-              placeholder="Search by name or email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-9"
-            />
-          </div>
-        </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase tracking-wider text-[#283733]">Email Address</label>
+                  <Input
+                    required
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="vikram.singh@ssb.gov.in"
+                    className="bg-[#FCF5EE] border-[#71807A]/30 text-xs"
+                  />
+                </div>
 
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase tracking-wider text-[#283733]">Temporary Password</label>
+                  <Input
+                    required
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="••••••••••••"
+                    className="bg-[#FCF5EE] border-[#71807A]/30 text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase tracking-wider text-[#283733]">System Role (RBAC)</label>
+                  <Select value={formData.role} onValueChange={(val) => setFormData({ ...formData, role: val })}>
+                    <SelectTrigger className="bg-[#FCF5EE] border-[#71807A]/30 text-xs">
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-[#71807A]/30 text-xs">
+                      <SelectItem value="OFFICER">OFFICER (Border Reviewer)</SelectItem>
+                      <SelectItem value="ADMIN">ADMIN (System Controller)</SelectItem>
+                      <SelectItem value="SUBMITTER">SUBMITTER (Field Operator)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button type="button" variant="outline" onClick={() => setOpenModal(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" variant="gold" className="font-bold">
+                    Provision Account
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        }
+      />
+
+      <Card className="p-0 overflow-hidden border border-[#71807A]/25 bg-white">
         {loading ? (
           <div className="p-6 space-y-4">
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-12 w-full" />
           </div>
-        ) : users.length === 0 ? (
-          <div className="p-12 text-center text-slate-400">
-            No users match search criteria.
-          </div>
         ) : (
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-[#FCF5EE] border-b border-[#71807A]/20">
               <TableRow>
-                <TableHead>User Profile</TableHead>
-                <TableHead>System Role</TableHead>
-                <TableHead>Account Status</TableHead>
-                <TableHead>Created Date</TableHead>
-                <TableHead className="text-right">Action</TableHead>
+                <TableHead className="text-[#283733] font-bold">Operator Name & Email</TableHead>
+                <TableHead className="text-[#283733] font-bold">Assigned Role</TableHead>
+                <TableHead className="text-[#283733] font-bold">Account Status</TableHead>
+                <TableHead className="text-[#283733] font-bold">Created Timestamp</TableHead>
+                <TableHead className="text-right text-[#283733] font-bold">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {users.map((u) => (
-                <TableRow key={u.id}>
+                <TableRow key={u.id} className="hover:bg-[#FCF5EE]/50">
                   <TableCell>
-                    <p className="font-semibold text-slate-200">{u.name}</p>
-                    <p className="text-xs text-slate-400">{u.email}</p>
+                    <p className="font-bold text-xs text-[#283733]">{u.name}</p>
+                    <p className="text-[10px] font-mono text-[#71807A]">{u.email}</p>
                   </TableCell>
                   <TableCell>
                     <Badge variant={u.role === "ADMIN" ? "FAIL" : u.role === "OFFICER" ? "REVIEW" : "PASS"}>
@@ -156,24 +175,20 @@ export function AdminUsersPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {u.isActive ? (
-                      <span className="inline-flex items-center text-xs text-emerald-400 font-medium">
-                        <CheckCircle className="h-3.5 w-3.5 mr-1" /> Active
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center text-xs text-rose-400 font-medium">
-                        <XCircle className="h-3.5 w-3.5 mr-1" /> Deactivated
-                      </span>
-                    )}
+                    <span className={`inline-flex items-center text-xs font-bold font-mono ${u.isActive ? "text-[#2F7D5A]" : "text-[#B84A4A]"}`}>
+                      <span className={`h-2 w-2 rounded-full mr-1.5 ${u.isActive ? "bg-[#2F7D5A]" : "bg-[#B84A4A]"}`} />
+                      {u.isActive ? "ACTIVE" : "INACTIVE"}
+                    </span>
                   </TableCell>
-                  <TableCell className="text-xs text-slate-400">
-                    {new Date(u.createdAt).toLocaleDateString()}
+                  <TableCell className="text-xs font-mono text-[#71807A]">
+                    {new Date(u.createdAt).toLocaleString()}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
                       size="sm"
-                      variant={u.isActive ? "outline" : "secondary"}
-                      onClick={() => toggleUserActive(u.id, u.isActive)}
+                      variant="outline"
+                      onClick={() => handleToggleActive(u)}
+                      className="text-xs"
                     >
                       {u.isActive ? "Deactivate" : "Activate"}
                     </Button>
@@ -184,62 +199,6 @@ export function AdminUsersPage() {
           </Table>
         )}
       </Card>
-
-      {/* Create User Modal Dialog */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create Checkpoint Personnel</DialogTitle>
-            <DialogDescription>
-              Enforce strict credentials (min 10 chars, letter + number).
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleSubmit(onCreateUser)} className="space-y-4 pt-2">
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Full Name</label>
-              <Input {...register("name")} placeholder="Officer Vikram Singh" />
-              {errors.name && <p className="text-xs text-rose-400">{errors.name.message}</p>}
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Email Address</label>
-              <Input {...register("email")} type="email" placeholder="vikram@satyascan.local" />
-              {errors.email && <p className="text-xs text-rose-400">{errors.email.message}</p>}
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Password</label>
-              <Input {...register("password")} type="password" placeholder="••••••••••••" />
-              {errors.password && <p className="text-xs text-rose-400">{errors.password.message}</p>}
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Assigned Role</label>
-              <Select value={selectedRole} onValueChange={(val) => setValue("role", val)}>
-                <SelectTrigger className="w-full bg-slate-950">
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="SUBMITTER">Submitter (Field Agent)</SelectItem>
-                  <SelectItem value="OFFICER">Officer (Border Reviewer)</SelectItem>
-                  <SelectItem value="ADMIN">Admin (System Administrator)</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.role && <p className="text-xs text-rose-400">{errors.role.message}</p>}
-            </div>
-
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setCreateDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting} className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold">
-                {isSubmitting ? "Creating..." : "Create Personnel Account"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
