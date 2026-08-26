@@ -152,55 +152,55 @@ class OCREngine:
         }
 
     def parse_pan(self, texts_extracted):
-        all_text = " ".join(texts_extracted).upper()
+        all_text = " ".join(texts_extracted)
         
         # PAN format: 5 letters + 4 digits + 1 letter (e.g., ABCDE1234F)
-        pan_match = re.search(r'\b([A-Z]{5}\d{4}[A-Z])\b', all_text)
+        pan_match = re.search(r'\b([A-Z]{5}\d{4}[A-Z])\b', all_text, re.IGNORECASE)
         
         # Name usually appears after "Name" label
-        name_match = re.search(r'Name[:\s]+([A-Z][A-Z\s]+?)(?:\n|Father|DOB|$)', " ".join(texts_extracted))
+        name_match = re.search(r'Name[:\s]+([A-Z\s\.]+?)(?:\n|Father|DOB|$)', all_text, re.IGNORECASE)
         
         # DOB
         dob_match = re.search(r'\b(\d{2}/\d{2}/\d{4})\b', all_text)
         
         return {
-            "doc_number": pan_match.group(1) if pan_match else None,
+            "doc_number": pan_match.group(1).upper() if pan_match else None,
             "name": name_match.group(1).strip() if name_match else None,
             "dob": dob_match.group(1) if dob_match else None,
         }
 
     def parse_dl(self, texts_extracted):
-        all_text = " ".join(texts_extracted).upper()
+        all_text = " ".join(texts_extracted)
         
         # DL format varies by state, common: XX-YYYYYYYYYYYYY or XX0000000000000
-        dl_match = re.search(r'\b([A-Z]{2}[-\s]?\d{2}[\s\d]{10,14})\b', all_text)
+        dl_match = re.search(r'\b([A-Z]{2}[-\s]?\d{2}[\s\d]{10,14})\b', all_text, re.IGNORECASE)
         
-        name_match = re.search(r'Name[:\s]+([A-Z][A-Z\s]+?)(?:\n|S/O|D/O|W/O|$)', " ".join(texts_extracted))
-        dob_match = re.search(r'(?:DOB|Date of Birth)[:\s]+(\d{2}[-/]\d{2}[-/]\d{4})', all_text)
-        expiry_match = re.search(r'(?:Valid|Expiry)[:\s]+(\d{2}[-/]\d{2}[-/]\d{4})', all_text)
+        name_match = re.search(r'Name[:\s]+([A-Z\s\.]+?)(?:\n|S/O|D/O|W/O|$)', all_text, re.IGNORECASE)
+        dob_match = re.search(r'(?:DOB|Date of Birth)[:\s]+(\d{2}[-/]\d{2}[-/]\d{4})', all_text, re.IGNORECASE)
+        expiry_match = re.search(r'(?:Valid|Expiry)[:\s]+(\d{2}[-/]\d{2}[-/]\d{4})', all_text, re.IGNORECASE)
         
         return {
-            "doc_number": dl_match.group(1).strip() if dl_match else None,
+            "doc_number": dl_match.group(1).upper().strip() if dl_match else None,
             "name": name_match.group(1).strip() if name_match else None,
             "dob": dob_match.group(1) if dob_match else None,
             "expiry": expiry_match.group(1) if expiry_match else None,
         }
 
     def parse_voter_id(self, texts_extracted):
-        all_text = " ".join(texts_extracted).upper()
+        all_text = " ".join(texts_extracted)
         
         # EPIC format: 3 letters + 7 digits (e.g., ABC1234567)
-        epic_match = re.search(r'\b([A-Z]{3}\d{7})\b', all_text)
+        epic_match = re.search(r'\b([A-Z]{3}\d{7})\b', all_text, re.IGNORECASE)
         
-        name_match = re.search(r'Name[:\s]+([A-Z][A-Z\s]+?)(?:\n|Father|Age|$)', " ".join(texts_extracted))
-        dob_match = re.search(r'(?:DOB|Date of Birth|Age)[:\s]+(\d{2}[-/]\d{2}[-/]\d{4})', all_text)
-        gender_match = re.search(r'\b(MALE|FEMALE|M|F)\b', all_text)
+        name_match = re.search(r'Name[:\s]+([A-Z\s\.]+?)(?:\n|Father|Age|$)', all_text, re.IGNORECASE)
+        dob_match = re.search(r'(?:DOB|Date of Birth|Age)[:\s]+(\d{2}[-/]\d{2}[-/]\d{4})', all_text, re.IGNORECASE)
+        gender_match = re.search(r'\b(MALE|FEMALE|M|F)\b', all_text, re.IGNORECASE)
         
         return {
-            "doc_number": epic_match.group(1) if epic_match else None,
+            "doc_number": epic_match.group(1).upper() if epic_match else None,
             "name": name_match.group(1).strip() if name_match else None,
             "dob": dob_match.group(1) if dob_match else None,
-            "gender": gender_match.group(1) if gender_match else None,
+            "gender": gender_match.group(1).upper() if gender_match else None,
         }
 
     def parse_passport_mrz(self, texts_extracted):
