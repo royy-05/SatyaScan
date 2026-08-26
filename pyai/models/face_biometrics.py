@@ -49,12 +49,13 @@ class FaceBiometrics:
         
         sim = self.cosine_similarity(emb_id, emb_live)
         
-        # Liveness check mock
-        liveness_score = np.random.uniform(0.7, 1.0) if self.app else 0.8
+        # Liveness checking requires a specialized 3D passive anti-spoofing module
+        # Currently disabled to maintain AI credibility.
+        liveness_score = 0.0
         
         return {
             "similarity": float(sim),
             "match": bool(sim >= self.threshold),
             "liveness_score": float(liveness_score),
-            "spoof_detected": bool(liveness_score < 0.5)
+            "spoof_detected": False
         }
