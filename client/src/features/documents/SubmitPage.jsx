@@ -149,7 +149,7 @@ export function SubmitPage() {
               >
                 <input
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/jpeg,image/png,image/webp, application/pdf,.pdf"
                   onChange={handleFileChange}
                   disabled={uploading || !!submittedDocId}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"

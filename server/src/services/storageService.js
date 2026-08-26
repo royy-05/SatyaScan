@@ -10,7 +10,16 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 }
 
 export async function detectMimeType(buffer) {
-  // Simple magic number check for JPEG, PNG, WEBP, PDF
+  // Simple magic number check for PDF, JPEG, PNG, WEBP
+  if (
+    buffer.length >= 4 &&
+    buffer[0] === 0x25 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x44 &&
+    buffer[3] === 0x46
+  ) {
+    return "application/pdf";
+  }
   if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
     return "image/jpeg";
   }

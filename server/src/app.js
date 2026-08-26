@@ -71,6 +71,9 @@ app.get("/ready", async (_req, res) => {
 
 // Versioned API Routes (/api/v1)
 const apiV1 = express.Router();
+apiV1.get("/health", (_req, res) => {
+  return sendSuccess(res, { status: "UP", timestamp: new Date().toISOString() });
+});
 apiV1.use("/auth", authRoutes);
 apiV1.use("/documents", documentRoutes);
 apiV1.use("/reviews", reviewRoutes);

@@ -29,3 +29,12 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# AI Model Weights & Virtual Envs
+pyai/weights/
+pyai/venv/
+pyai/__pycache__/
+*.pt
+*.pth
+*.pkl
+*.h5

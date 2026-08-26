@@ -12,6 +12,7 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default("15m"),
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
   CORS_ORIGIN: z.string().default("http://localhost:5173"),
+  AI_API_KEY: z.string().default("satyascan-secret-key-2026"),
   PYTHON_AI_URL: z.string().optional().default(""),
 });
 

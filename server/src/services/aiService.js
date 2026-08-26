@@ -41,7 +41,7 @@ export const aiService = {
       const response = await axios.post(`${env.PYTHON_AI_URL}/scan`, formData, {
         headers: {
           ...formData.getHeaders(),
-          "X-API-Key": "satyascan-secret-key-2026"
+           "X-API-Key": env.AI_API_KEY
         },
         timeout: 30000,
       });

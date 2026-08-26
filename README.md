@@ -24,7 +24,7 @@ SatyaScan is an enterprise document and identity verification web application de
 ```bash
 docker compose up -d
 ```
-This starts PostgreSQL 16 on port `5432` and Adminer DB GUI on port `8080`.
+This starts PostgreSQL 16 on host port `5433` (mapped from container port 5432) and Adminer DB GUI on port `8080`.
 
 ### 2. Configure & Seed Server
 ```bash
