@@ -9,7 +9,7 @@ import { auditService } from "../services/auditService.js";
 import { emitDocumentStatus } from "../sockets/index.js";
 import { sendSuccess, sendPaginated, sendError } from "../utils/responseEnvelope.js";
 
-const docTypeEnum = z.enum(["PASSPORT", "VISA", "NATIONAL_ID", "DRIVING_LICENSE", "PERMIT"]);
+const docTypeEnum = z.enum(["PASSPORT", "VISA", "NATIONAL_ID", "DRIVING_LICENSE", "PAN", "PERMIT"]);
 
 export const documentController = {
   async faceVerify(req, res, next) {

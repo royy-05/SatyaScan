@@ -34,4 +34,11 @@ export const DOC_TYPES = [
     allowedMimetypes: ["image/jpeg", "image/png", "image/webp"],
     maxSizeBytes: 10485760,
   },
+  {
+    code: "PAN",
+    label: "Permanent Account Number (PAN)",
+    description: "Indian tax identification card",
+    allowedMimetypes: ["image/jpeg", "image/png", "image/webp"],
+    maxSizeBytes: 10485760,
+  },
 ];

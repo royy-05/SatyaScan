@@ -35,6 +35,7 @@ export function SubmitPage() {
           { code: "VISA", label: "Entry Visa" },
           { code: "NATIONAL_ID", label: "National Identity Card" },
           { code: "DRIVING_LICENSE", label: "Driving License" },
+          { code: "PAN", label: "Permanent Account Number (PAN)" },
           { code: "PERMIT", label: "Special Border Pass / Permit" },
         ]);
       }
@@ -155,7 +156,7 @@ export function SubmitPage() {
               >
                 <input
                   type="file"
-                  accept="image/jpeg,image/png,image/webp, application/pdf,.pdf"
+                  accept="image/jpeg,.jpg,.jpeg,image/png,image/webp, application/pdf,.pdf"
                   onChange={handleFileChange}
                   disabled={uploading || !!submittedDocId}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
