@@ -128,6 +128,115 @@ class OCREngine:
                 return True
         return False
 
+    def parse_aadhaar(self, texts_extracted):
+        all_text = " ".join(texts_extracted)
+        
+        # 12-digit Aadhaar, often "XXXX XXXX XXXX"
+        aadhaar_match = re.search(r'\b(\d{4}\s?\d{4}\s?\d{4})\b', all_text)
+        
+        # Name - first line matching "Firstname Lastname" pattern
+        name = None
+        for line in texts_extracted:
+            if re.match(r'^[A-Z][a-z]+ [A-Z][a-z]+', line.strip()):
+                name = line.strip()
+                break
+        
+        dob_match = re.search(r'(?:DOB|D[OG]B|Date of Birth)[:\s/]*(\d{2}/\d{2}/\d{4})', all_text, re.IGNORECASE)
+        gender_match = re.search(r'\b(MALE|FEMALE|Male|Female)\b', all_text)
+        
+        return {
+            "doc_number": aadhaar_match.group(1).replace(" ", "") if aadhaar_match else None,
+            "name": name,
+            "dob": dob_match.group(1) if dob_match else None,
+            "gender": gender_match.group(1).upper() if gender_match else None,
+        }
+
+    def parse_pan(self, texts_extracted):
+        all_text = " ".join(texts_extracted).upper()
+        
+        # PAN format: 5 letters + 4 digits + 1 letter (e.g., ABCDE1234F)
+        pan_match = re.search(r'\b([A-Z]{5}\d{4}[A-Z])\b', all_text)
+        
+        # Name usually appears after "Name" label
+        name_match = re.search(r'Name[:\s]+([A-Z][A-Z\s]+?)(?:\n|Father|DOB|$)', " ".join(texts_extracted))
+        
+        # DOB
+        dob_match = re.search(r'\b(\d{2}/\d{2}/\d{4})\b', all_text)
+        
+        return {
+            "doc_number": pan_match.group(1) if pan_match else None,
+            "name": name_match.group(1).strip() if name_match else None,
+            "dob": dob_match.group(1) if dob_match else None,
+        }
+
+    def parse_dl(self, texts_extracted):
+        all_text = " ".join(texts_extracted).upper()
+        
+        # DL format varies by state, common: XX-YYYYYYYYYYYYY or XX0000000000000
+        dl_match = re.search(r'\b([A-Z]{2}[-\s]?\d{2}[\s\d]{10,14})\b', all_text)
+        
+        name_match = re.search(r'Name[:\s]+([A-Z][A-Z\s]+?)(?:\n|S/O|D/O|W/O|$)', " ".join(texts_extracted))
+        dob_match = re.search(r'(?:DOB|Date of Birth)[:\s]+(\d{2}[-/]\d{2}[-/]\d{4})', all_text)
+        expiry_match = re.search(r'(?:Valid|Expiry)[:\s]+(\d{2}[-/]\d{2}[-/]\d{4})', all_text)
+        
+        return {
+            "doc_number": dl_match.group(1).strip() if dl_match else None,
+            "name": name_match.group(1).strip() if name_match else None,
+            "dob": dob_match.group(1) if dob_match else None,
+            "expiry": expiry_match.group(1) if expiry_match else None,
+        }
+
+    def parse_voter_id(self, texts_extracted):
+        all_text = " ".join(texts_extracted).upper()
+        
+        # EPIC format: 3 letters + 7 digits (e.g., ABC1234567)
+        epic_match = re.search(r'\b([A-Z]{3}\d{7})\b', all_text)
+        
+        name_match = re.search(r'Name[:\s]+([A-Z][A-Z\s]+?)(?:\n|Father|Age|$)', " ".join(texts_extracted))
+        dob_match = re.search(r'(?:DOB|Date of Birth|Age)[:\s]+(\d{2}[-/]\d{2}[-/]\d{4})', all_text)
+        gender_match = re.search(r'\b(MALE|FEMALE|M|F)\b', all_text)
+        
+        return {
+            "doc_number": epic_match.group(1) if epic_match else None,
+            "name": name_match.group(1).strip() if name_match else None,
+            "dob": dob_match.group(1) if dob_match else None,
+            "gender": gender_match.group(1) if gender_match else None,
+        }
+
+    def parse_passport_mrz(self, texts_extracted):
+        parsed = {}
+        for text in texts_extracted:
+            clean_text = text.replace(" ", "").upper()
+            if len(clean_text) == 44 and re.match(r'^[A-Z0-9<]{44}$', clean_text):
+                parsed['doc_number'] = clean_text[0:9].replace('<', '')
+                dob_raw = clean_text[13:19]
+                if len(dob_raw) == 6:
+                    parsed['dob'] = f"{dob_raw[4:6]}/{dob_raw[2:4]}/{dob_raw[0:2]}"
+                exp_raw = clean_text[21:27]
+                if len(exp_raw) == 6:
+                    parsed['expiry'] = f"{exp_raw[4:6]}/{exp_raw[2:4]}/{exp_raw[0:2]}"
+                gender = clean_text[20]
+                if gender in ('M', 'F'):
+                    parsed['gender'] = 'MALE' if gender == 'M' else 'FEMALE'
+                break
+        return parsed
+
+    def extract_parsed_fields(self, texts_extracted, doc_type):
+        doc_type = doc_type.upper()
+        
+        if doc_type == "PASSPORT":
+            return self.parse_passport_mrz(texts_extracted)
+        elif doc_type in ("AADHAAR", "NATIONAL_ID"):
+            return self.parse_aadhaar(texts_extracted)
+        elif doc_type == "PAN":
+            return self.parse_pan(texts_extracted)
+        elif doc_type in ("DRIVING_LICENSE", "DL"):
+            return self.parse_dl(texts_extracted)
+        elif doc_type in ("VOTER_ID", "EPIC"):
+            return self.parse_voter_id(texts_extracted)
+        else:
+            return {}
+
     def process(self, img_path, doc_type):
         texts = self.extract_text(img_path)
         print(f"\n[DEBUG] Extracted texts from {img_path}:")
@@ -148,7 +257,12 @@ class OCREngine:
         elif doc_type == "VOTER_ID":
             is_valid = self.validate_voter_id(texts)
             
+        parsed_fields = self.extract_parsed_fields(texts, doc_type)
+        mrz_parsed = parsed_fields if doc_type == "PASSPORT" else {}
+
         return {
             "texts_extracted": texts,
-            "is_valid_format": is_valid
+            "is_valid_format": is_valid,
+            "mrz_parsed": mrz_parsed,
+            "parsed_fields": parsed_fields
         }
