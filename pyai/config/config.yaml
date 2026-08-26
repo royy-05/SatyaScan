@@ -1,0 +1,35 @@
+models:
+  ocr:
+    lang: "en"
+    use_angle_cls: true
+    det_db_thresh: 0.3
+    det_db_box_thresh: 0.6
+    det_db_unclip_ratio: 1.5
+  face:
+    name: "buffalo_l"
+    root: "./models/weights/insightface"
+    similarity_threshold: 0.5
+  tampering:
+    model_name: "resnet34"
+    pretrained: true
+    num_classes: 2
+    weights_path: "./models/weights/tampering_classifier.pth"
+
+thresholds:
+  ela:
+    quality: 90
+    std_dev_multiplier: 5.0
+  risk:
+    low_upper_bound: 30
+    review_upper_bound: 70
+    # > 70 is High
+
+risk_weights:
+  mrz_checksum: 0.40
+  ela_tampering: 0.25
+  face_match: 0.25
+  watchlist: 0.10
+
+paths:
+  synthetic_data_output: "./datasets/sample_data/"
+  log_dir: "./logs/"

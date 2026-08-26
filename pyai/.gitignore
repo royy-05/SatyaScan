@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+venv/
+env/
+ENV/
+.venv/
+.DS_Store
+temp/
+*.log
+
+datasets/**/*.tif
+datasets/**/*.jpg
+datasets/**/*.png
+*.pth

@@ -1,0 +1,17 @@
+torch
+torchvision
+timm
+opencv-python
+pillow
+easyocr
+pypdfium2
+insightface
+onnxruntime
+faker
+fastapi
+uvicorn
+pydantic
+pytest
+pyyaml
+python-multipart
+python-dotenv
