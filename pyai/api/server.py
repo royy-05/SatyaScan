@@ -126,6 +126,7 @@ async def verify_identity(
     if selfie_image and live_path:
         with open(live_path, "wb") as buffer:
             shutil.copyfileobj(selfie_image.file, buffer)
+
         
     # Handle PDF uploads for the ID image (like e-Aadhaar)
     if id_path.lower().endswith(".pdf"):
