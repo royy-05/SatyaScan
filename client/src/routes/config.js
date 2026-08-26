@@ -27,6 +27,12 @@ export const APP_ROUTES = [
     inSidebar: false,
   },
   {
+    path: "/app/submissions/:id/face-verify",
+    label: "Live Face Verification",
+    roles: ["SUBMITTER", "OFFICER", "ADMIN"],
+    inSidebar: false,
+  },
+  {
     path: "/app/reviews/queue",
     label: "Review Queue",
     icon: "ShieldAlert",

@@ -11,6 +11,7 @@ import { DashboardPage } from "../features/documents/DashboardPage";
 import { SubmitPage } from "../features/documents/SubmitPage";
 import { SubmissionsPage } from "../features/documents/SubmissionsPage";
 import { SubmissionDetailPage } from "../features/documents/SubmissionDetailPage";
+import { LiveFaceCapture } from "../features/documents/LiveFaceCapture";
 import { ReviewQueuePage } from "../features/reviews/ReviewQueuePage";
 import { ReviewDetailPage } from "../features/reviews/ReviewDetailPage";
 import { MyReviewsPage } from "../features/reviews/MyReviewsPage";
@@ -55,6 +56,7 @@ export function AppRouter() {
         {/* Documents Routes */}
         <Route path="submissions" element={<SubmissionsPage />} />
         <Route path="submissions/:id" element={<SubmissionDetailPage />} />
+        <Route path="submissions/:id/face-verify" element={<LiveFaceCapture />} />
 
         {/* Review Officer Routes */}
         <Route

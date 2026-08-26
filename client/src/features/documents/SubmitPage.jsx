@@ -55,7 +55,7 @@ export function SubmitPage() {
         const targetId = submittedDocId || lastEvent.documentId;
         if (targetId && targetId !== "null" && targetId !== "undefined") {
           setTimeout(() => {
-            navigate(`/app/submissions/${targetId}`);
+            navigate(`/app/submissions/${targetId}/face-verify`);
           }, 1200);
         }
       } else if (lastEvent.status === "failed") {

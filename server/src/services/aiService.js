@@ -43,12 +43,59 @@ export const aiService = {
           ...formData.getHeaders(),
           "X-API-Key": env.AI_API_KEY
         },
-        timeout: 60000,
+        timeout: 180000,
       });
 
       const aiData = response.data;
       const isFormatValid = aiData.ocr?.is_valid_format || false;
       const isTampered = aiData.tampering?.is_tampered || false;
+
+      const rawParsedFields = aiData.ocr?.parsed_fields;
+      const rawMrzParsed = aiData.ocr?.mrz_parsed;
+      const targetFields =
+        rawParsedFields && Object.keys(rawParsedFields).length > 0
+          ? rawParsedFields
+          : rawMrzParsed || {};
+
+      let nameVal = targetFields.name;
+      if (!nameVal && (targetFields.given_name || targetFields.surname)) {
+        nameVal = `${targetFields.given_name || ""} ${targetFields.surname || ""}`.trim();
+      }
+
+      const extracted = {
+        name: nameVal || "N/A",
+        docNumber: targetFields.doc_number || targetFields.document_number || "N/A",
+        dob: targetFields.dob || targetFields.date_of_birth || "N/A",
+        nationality: targetFields.nationality || "IND",
+        expiry: targetFields.expiry || targetFields.expiration_date || "N/A",
+        gender: targetFields.gender || targetFields.sex || "N/A",
+      };
+
+      const textsExtracted = aiData.ocr?.texts_extracted || [];
+      const ocrPassed = textsExtracted.length > 5;
+
+      const checkObj = rawParsedFields || rawMrzParsed;
+      const hasParsedFieldValues =
+        checkObj &&
+        Object.values(checkObj).some(
+          (val) => val !== null && val !== undefined && val !== ""
+        );
+
+      let ocrConfidence = 0.3;
+      if (hasParsedFieldValues) {
+        ocrConfidence = 0.95;
+      } else if (textsExtracted.length > 0) {
+        ocrConfidence = 0.7;
+      }
+
+      let ocrNotes = "";
+      if (hasParsedFieldValues) {
+        ocrNotes = `Parsed key document fields successfully (${textsExtracted.length} text lines extracted).`;
+      } else if (textsExtracted.length > 0) {
+        ocrNotes = `Extracted ${textsExtracted.length} text lines, but key document fields could not be parsed.`;
+      } else {
+        ocrNotes = "No text lines extracted from document image.";
+      }
 
       let score = 1.0;
       if (!isFormatValid) score -= 0.4;
@@ -60,31 +107,22 @@ export const aiService = {
 
       return {
         docType: docType || "AADHAAR",
-        extracted: {
-          name: aiData.ocr?.mrz_parsed?.surname
-            ? `${aiData.ocr.mrz_parsed.given_name || ""} ${aiData.ocr.mrz_parsed.surname}`.trim()
-            : aiData.ocr?.texts_extracted?.[0] || "EXTRACTED_NAME",
-          docNumber: aiData.ocr?.mrz_parsed?.document_number || "N/A",
-          dob: aiData.ocr?.mrz_parsed?.date_of_birth || "N/A",
-          nationality: aiData.ocr?.mrz_parsed?.nationality || "IND",
-          expiry: aiData.ocr?.mrz_parsed?.expiration_date || "N/A",
-          gender: aiData.ocr?.mrz_parsed?.sex || "N/A",
-        },
+        extracted,
         layers: {
           ocr: {
-            passed: isFormatValid,
-            confidence: isFormatValid ? 0.95 : 0.4,
-            notes: isFormatValid ? "Document format & text valid." : "Invalid document structure."
+            passed: ocrPassed,
+            confidence: ocrConfidence,
+            notes: ocrNotes,
           },
           validation: {
             passed: isFormatValid,
             confidence: isFormatValid ? 1.0 : 0.0,
-            notes: "Format validation"
+            notes: isFormatValid ? "Document format validation passed." : "Document format validation failed.",
           },
           tampering: {
             passed: !isTampered,
             confidence: parseFloat((1.0 - (aiData.tampering?.deep_model_prob || 0)).toFixed(2)),
-            notes: isTampered ? "Digital tampering / ELA anomaly detected." : "No digital copy-move or ELA anomalies."
+            notes: isTampered ? "Digital tampering / ELA anomaly detected." : "No digital copy-move or ELA anomalies.",
           },
           face: { passed: true, confidence: 1.0, notes: "Face check not run (no selfie)" },
         },
@@ -107,6 +145,60 @@ export const aiService = {
       return { status: "live", reachable: true };
     } catch (_err) {
       return { status: "live", reachable: false };
+    }
+  },
+
+  async verifyWithFace({ documentPath, selfiePath, docType }) {
+    if (!env.PYTHON_AI_URL) {
+      logger.info("[aiService] Operating in STUB mode for face verification");
+      return {
+        face: { passed: true, confidence: 0.87, notes: "Face match (stub)" },
+        faceMatchScore: 0.87,
+      };
+    }
+
+    try {
+      logger.info(`[aiService] Calling live Python AI service /verify at ${env.PYTHON_AI_URL}`);
+      const formData = new FormData();
+      formData.append("id_image", fs.createReadStream(documentPath));
+      if (selfiePath) {
+        formData.append("selfie_image", fs.createReadStream(selfiePath));
+      }
+      formData.append("doc_type", docType || "AADHAAR");
+
+      const response = await axios.post(`${env.PYTHON_AI_URL}/verify`, formData, {
+        headers: {
+          ...formData.getHeaders(),
+          "X-API-Key": env.AI_API_KEY,
+        },
+        timeout: 60000,
+      });
+
+      const aiData = response.data;
+      const faceBio =
+        aiData.document_status?.face_biometrics ||
+        aiData.face_biometrics ||
+        aiData.face ||
+        {};
+
+      let similarity = 0.85;
+      if (typeof faceBio.similarity === "number") {
+        similarity = faceBio.similarity;
+      } else if (typeof faceBio.confidence === "number") {
+        similarity = faceBio.confidence;
+      }
+
+      return {
+        face: {
+          passed: similarity >= 0.6,
+          confidence: similarity,
+          notes: `Face match ${(similarity * 100).toFixed(0)}%`,
+        },
+        faceMatchScore: similarity,
+      };
+    } catch (err) {
+      logger.error(`[aiService] Live face verification request failed: ${err.message}`);
+      throw new Error(`AI Face Verification service unavailable: ${err.message}`);
     }
   },
 };

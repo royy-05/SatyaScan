@@ -1,3 +1,4 @@
+import path from "path";
 import { z } from "zod";
 import { prisma } from "../config/prisma.js";
 import { storageService } from "../services/storageService.js";
@@ -11,6 +12,114 @@ import { sendSuccess, sendPaginated, sendError } from "../utils/responseEnvelope
 const docTypeEnum = z.enum(["PASSPORT", "VISA", "NATIONAL_ID", "DRIVING_LICENSE", "PERMIT"]);
 
 export const documentController = {
+  async faceVerify(req, res, next) {
+    try {
+      const { id } = req.params;
+
+      const document = await prisma.document.findFirst({
+        where: { id, deletedAt: null },
+        include: { verifications: { orderBy: { createdAt: "desc" }, take: 1 } },
+      });
+
+      if (!document) {
+        return sendError(res, "Document not found", "NOT_FOUND", 404);
+      }
+
+      // Check ownership if submitter
+      if (req.user.role === "SUBMITTER" && document.submitterId !== req.user.id) {
+        return sendError(res, "Access denied to this document", "FORBIDDEN", 403);
+      }
+
+      if (!req.file) {
+        return sendError(res, "Selfie image file is required", "BAD_REQUEST", 400);
+      }
+
+      // Save selfie temporarily to uploads folder
+      const savedSelfie = await storageService.save(
+        req.file.buffer,
+        req.file.originalname || "selfie.jpg"
+      );
+
+      const documentPath = path.join(process.cwd(), "uploads", document.filePath);
+      const selfiePath = savedSelfie.filePath;
+
+      let faceResult;
+      try {
+        faceResult = await aiService.verifyWithFace({
+          documentPath,
+          selfiePath,
+          docType: document.docType,
+        });
+      } finally {
+        // Delete selfie immediately after verification (Non-goal #7)
+        await storageService.delete(savedSelfie.storageKey).catch(() => {});
+      }
+
+      const latestVerification = document.verifications[0];
+      const updatedLayers = {
+        ...(latestVerification?.layers || {}),
+        face: faceResult.face,
+      };
+
+      // Recalculate overall score with updated face layer
+      let score = 1.0;
+      if (updatedLayers.validation?.passed === false) score -= 0.4;
+      if (updatedLayers.tampering?.passed === false) score -= 0.3;
+      if (updatedLayers.face?.passed === false) score -= 0.3;
+      score = Math.max(0, parseFloat(score.toFixed(2)));
+
+      const scoreEvaluated = scoringService.calculateScore({
+        overallScore: score,
+        layers: updatedLayers,
+      });
+
+      let updatedVerification;
+      if (latestVerification) {
+        updatedVerification = await prisma.verification.update({
+          where: { id: latestVerification.id },
+          data: {
+            layers: updatedLayers,
+            overallScore: scoreEvaluated.overallScore,
+            verdict: scoreEvaluated.verdict,
+          },
+        });
+      } else {
+        updatedVerification = await prisma.verification.create({
+          data: {
+            documentId: document.id,
+            layers: updatedLayers,
+            overallScore: scoreEvaluated.overallScore,
+            verdict: scoreEvaluated.verdict,
+            engineVersion: "python-ai-1.0",
+          },
+        });
+      }
+
+      emitDocumentStatus(document.id, "face_verification_done", {
+        verdict: scoreEvaluated.verdict,
+        overallScore: scoreEvaluated.overallScore,
+        verificationId: updatedVerification.id,
+        faceMatchScore: faceResult.faceMatchScore,
+      });
+
+      await auditService.log({
+        actorId: req.user.id,
+        action: "FACE_VERIFICATION_SUBMITTED",
+        entityType: "Document",
+        entityId: document.id,
+        metadata: {
+          verdict: scoreEvaluated.verdict,
+          score: scoreEvaluated.overallScore,
+          faceMatchScore: faceResult.faceMatchScore,
+        },
+        ipAddress: req.ip,
+      });
+
+      return sendSuccess(res, updatedVerification);
+    } catch (err) {
+      next(err);
+    }
+  },
   async upload(req, res, next) {
     try {
       if (!req.file) {

@@ -23,5 +23,11 @@ router.post(
 router.get("/", documentController.list);
 router.get("/:id", documentController.getById);
 router.post("/:id/reverify", requireRole("ADMIN"), documentController.reverify);
+router.post(
+  "/:id/face-verify",
+  uploadMiddleware.single("selfie"),
+  handleUploadError,
+  documentController.faceVerify
+);
 
 export default router;

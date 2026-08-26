@@ -85,6 +85,13 @@ export function SubmissionDetailPage() {
   const API_BASE = import.meta.env.VITE_API_URL?.replace("/api/v1", "") || "http://localhost:4000";
   const imagePreviewUrl = `${API_BASE}/uploads/${doc.filePath}`;
 
+  const faceLayer = latestVerification?.layers?.face;
+  const isFaceVerified =
+    faceLayer &&
+    typeof faceLayer.confidence === "number" &&
+    faceLayer.confidence > 0 &&
+    !faceLayer.notes?.toLowerCase().includes("not run");
+
   return (
     <div className="space-y-6">
       {/* Header Actions */}
@@ -120,7 +127,23 @@ export function SubmissionDetailPage() {
         {/* Left Column: Image Preview & Overview */}
         <div className="space-y-6 lg:col-span-1">
           <Card className="border-slate-800 bg-slate-900/60 p-4 space-y-4">
-            <h3 className="text-sm font-semibold text-slate-300">Document Scan Preview</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-300">Document Scan Preview</h3>
+              {isFaceVerified ? (
+                <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px]">
+                  Face Verified ✓
+                </Badge>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate(`/app/submissions/${doc.id}/face-verify`)}
+                  className="text-xs border-cyan-500/40 text-cyan-400 hover:bg-cyan-950/40 font-semibold"
+                >
+                  <UserCheck className="h-3.5 w-3.5 mr-1" /> Complete Face Verification
+                </Button>
+              )}
+            </div>
             <div className="rounded-lg overflow-hidden border border-slate-800 bg-black/40 flex items-center justify-center p-2 min-h-[220px]">
               <img
                 src={imagePreviewUrl}
