@@ -169,7 +169,9 @@ export const documentController = {
         select: { submitterId: true },
       });
       const sharedCount = sharedUsers.length;
-      let networkFlags = {};
+      let networkFlags = {
+          velocityCount: velocityCount
+      };
       if (sharedCount > 1) {
           networkFlags.sharedDeviceNetwork = true;
           networkFlags.sharedCount = sharedCount;
@@ -355,6 +357,7 @@ export const documentController = {
         where: { id, deletedAt: null },
         include: {
           submitter: { select: { id: true, name: true, email: true } },
+          deviceFingerprint: true,
           verifications: { orderBy: { createdAt: "desc" } },
           reviewDecisions: {
             orderBy: { createdAt: "desc" },

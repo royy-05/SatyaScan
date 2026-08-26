@@ -99,12 +99,32 @@ export function SubmissionDetailPage() {
     faceLayer.confidence > 0 &&
     !faceLayer.notes?.toLowerCase().includes("not run");
 
+  const riskScore = latestVerification?.overallScore || 0;
+  const isRejected = latestVerification?.verdict === "FAIL" || riskScore >= 70;
+
+  let headerBadgeText = doc.status;
+  let headerBadgeVariant = doc.status;
+
+  if (isRejected) {
+    headerBadgeText = "REJECTED / HIGH RISK";
+    headerBadgeVariant = "FAIL";
+  } else if (!isFaceVerified) {
+    headerBadgeText = "PENDING BIOMETRICS";
+    headerBadgeVariant = "REVIEW";
+  } else if (doc.status === "VERIFIED" && isFaceVerified) {
+    headerBadgeText = "VERIFIED";
+    headerBadgeVariant = "PASS";
+  } else if (doc.status === "FAILED") {
+    headerBadgeText = "FAILED";
+    headerBadgeVariant = "FAIL";
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <PageHeader
         title={doc.originalFilename}
-        badge={<Badge variant={doc.status}>{doc.status}</Badge>}
+        badge={<Badge variant={headerBadgeVariant}>{headerBadgeText}</Badge>}
         description={`Document ID: ${doc.id} • Type: ${doc.docType} • SHA256: ${doc.fileHash.substring(0, 16)}...`}
         actions={
           <div className="flex items-center space-x-2">
@@ -157,12 +177,17 @@ export function SubmissionDetailPage() {
               )}
             </div>
 
-            <ForensicImageInspector src={imagePreviewUrl} alt={doc.originalFilename} />
+            <ForensicImageInspector 
+              src={imagePreviewUrl} 
+              alt={doc.originalFilename} 
+              regions={latestVerification?.layers?.tampering?.tampered_regions || []}
+            />
 
             <div className="text-[11px] font-mono text-[#71807A] space-y-1 bg-[#FCF5EE] p-3 rounded border border-[#71807A]/20">
               <p><strong className="text-[#283733]">Uploaded By:</strong> {doc.submitter?.name || "System"}</p>
               <p><strong className="text-[#283733]">MIME Format:</strong> {doc.mimeType}</p>
               <p><strong className="text-[#283733]">File Size:</strong> {(doc.sizeBytes / 1024).toFixed(1)} KB</p>
+              <p><strong className="text-[#283733]">Device Hash:</strong> {doc.deviceFingerprint?.deviceHash ? doc.deviceFingerprint.deviceHash.substring(0, 16) + '...' : 'N/A'}</p>
               <p className="truncate"><strong className="text-[#283733]">Hash:</strong> {doc.fileHash}</p>
             </div>
           </Card>
@@ -216,6 +241,30 @@ export function SubmissionDetailPage() {
                     OCR Extracted Credentials
                   </h3>
                   <IdentityFieldGrid extracted={latestVerification} />
+                  
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#71807A] pt-4">
+                    Watchlist & Network Analysis
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="p-3 bg-[#FCF5EE] rounded-lg border border-[#71807A]/20 flex justify-between items-center">
+                      <span className="text-xs text-[#283733] font-semibold uppercase">Device Network</span>
+                      <Badge variant={latestVerification.networkFlags?.sharedDeviceNetwork ? "FAIL" : "PASS"}>
+                        {latestVerification.networkFlags?.sharedDeviceNetwork ? "SHARED HARDWARE DETECTED" : "UNIQUE DEVICE"}
+                      </Badge>
+                    </div>
+                    <div className="p-3 bg-[#FCF5EE] rounded-lg border border-[#71807A]/20 flex justify-between items-center">
+                      <span className="text-xs text-[#283733] font-semibold uppercase">Velocity Status</span>
+                      <Badge variant={latestVerification.networkFlags?.velocityCount >= 5 ? "FAIL" : "PASS"}>
+                        {latestVerification.networkFlags?.velocityCount >= 5 ? "RATE LIMITED / BLOCKED" : `VELOCITY: SAFE (${latestVerification.networkFlags?.velocityCount || 1}/5)`}
+                      </Badge>
+                    </div>
+                    <div className="p-3 bg-[#FCF5EE] rounded-lg border border-[#71807A]/20 flex justify-between items-center">
+                      <span className="text-xs text-[#283733] font-semibold uppercase">SIFT Copy-Move</span>
+                      <Badge variant={latestVerification.layers?.tampering?.sift_copy_move_detected ? "FAIL" : "PASS"}>
+                        {latestVerification.layers?.tampering?.sift_copy_move_detected ? "CLONE DETECTED" : "CLEAR"}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
               )}
 

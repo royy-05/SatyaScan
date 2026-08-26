@@ -3,10 +3,11 @@ import { Button } from "./Button";
 import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Sun } from "lucide-react";
 import { cn } from "../../lib/utils";
 
-export function ForensicImageInspector({ src, alt = "Document Scan", className }) {
+export function ForensicImageInspector({ src, alt = "Document Scan", className, regions = [] }) {
   const [scale, setScale] = useState(1);
   const [contrast, setContrast] = useState(100);
   const [brightness, setBrightness] = useState(100);
+  const [naturalSize, setNaturalSize] = useState({ w: 0, h: 0 });
 
   const handleZoomIn = () => setScale((prev) => Math.min(prev + 0.25, 3));
   const handleZoomOut = () => setScale((prev) => Math.max(prev - 0.25, 0.5));
@@ -24,6 +25,10 @@ export function ForensicImageInspector({ src, alt = "Document Scan", className }
       setContrast(100);
       setBrightness(100);
     }
+  };
+
+  const handleImageLoad = (e) => {
+    setNaturalSize({ w: e.target.naturalWidth, h: e.target.naturalHeight });
   };
 
   return (
@@ -77,20 +82,51 @@ export function ForensicImageInspector({ src, alt = "Document Scan", className }
 
       {/* Viewport */}
       <div className="relative flex-1 bg-black/40 min-h-[260px] max-h-[420px] overflow-auto flex items-center justify-center p-4">
-        <img
-          src={src}
-          alt={alt}
+        <div
+          className="relative max-h-full flex items-center justify-center"
           style={{
             transform: `scale(${scale})`,
-            filter: `contrast(${contrast}%) brightness(${brightness}%)`,
-            transition: "transform 0.2s ease-out, filter 0.2s ease-out",
+            transition: "transform 0.2s ease-out",
           }}
-          className="max-h-full object-contain rounded select-none cursor-grab active:cursor-grabbing"
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = "https://via.placeholder.com/400x250/283733/DBCEB1?text=Document+Scan+Unavailable";
-          }}
-        />
+        >
+          <img
+            src={src}
+            alt={alt}
+            onLoad={handleImageLoad}
+            style={{
+              filter: `contrast(${contrast}%) brightness(${brightness}%)`,
+              transition: "filter 0.2s ease-out",
+            }}
+            className="max-h-full object-contain rounded select-none cursor-grab active:cursor-grabbing"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "https://via.placeholder.com/400x250/283733/DBCEB1?text=Document+Scan+Unavailable";
+            }}
+          />
+          
+          {/* Forensic Bounding Box Overlay */}
+          {naturalSize.w > 0 && regions && regions.length > 0 && (
+            <svg
+              viewBox={`0 0 ${naturalSize.w} ${naturalSize.h}`}
+              className="absolute inset-0 w-full h-full pointer-events-none"
+              style={{ objectFit: "contain" }}
+            >
+              {regions.map((r, i) => (
+                <rect
+                  key={i}
+                  x={r.x}
+                  y={r.y}
+                  width={r.w}
+                  height={r.h}
+                  fill="rgba(239, 68, 68, 0.15)"
+                  stroke="#ef4444"
+                  strokeWidth={Math.max(2, naturalSize.w * 0.003)}
+                  strokeDasharray={`${Math.max(4, naturalSize.w * 0.005)},${Math.max(4, naturalSize.w * 0.005)}`}
+                />
+              ))}
+            </svg>
+          )}
+        </div>
       </div>
     </div>
   );

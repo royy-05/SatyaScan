@@ -99,13 +99,13 @@ export const aiService = {
         ocrNotes = "No text lines extracted from document image.";
       }
 
-      let score = 1.0;
-      if (!isFormatValid) score -= 0.4;
-      if (isTampered) score -= 0.3;
-
+      const riskAssessment = aiData.risk_assessment || {};
+      const compositeScore = riskAssessment.composite_risk_score ?? 0;
+      const riskFlag = riskAssessment.flag || "LOW";
+      
       let verdict = "PASS";
-      if (score < 0.5) verdict = "FAIL";
-      else if (score < 0.8) verdict = "REVIEW";
+      if (riskFlag === "HIGH") verdict = "FAIL";
+      else if (riskFlag === "REVIEW") verdict = "REVIEW";
 
       return {
         docType: docType || "AADHAAR",
@@ -125,10 +125,12 @@ export const aiService = {
             passed: !isTampered,
             confidence: parseFloat((1.0 - (aiData.tampering?.deep_model_prob || 0)).toFixed(2)),
             notes: isTampered ? "Digital tampering / ELA anomaly detected." : "No digital copy-move or ELA anomalies.",
+            tampered_regions: aiData.tampering?.tampered_regions || [],
+            sift_copy_move_detected: aiData.tampering?.sift_copy_move_detected || false
           },
           face: { passed: true, confidence: 1.0, notes: "Face check not run (no selfie)" },
         },
-        overallScore: score,
+        overallScore: compositeScore,
         verdict: verdict,
         engineVersion: "python-ai-1.0",
         externalHits: aiData.external_database_hits || {},

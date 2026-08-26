@@ -7,16 +7,21 @@ export function RiskScoreGauge({ score = 0, verdict = "PASS", className }) {
   
   let trackColor = "bg-[#2F7D5A]";
   let textColor = "text-[#2F7D5A]";
-  let label = "LOW RISK";
+  let label = "LOW RISK / CLEAR";
+  let displayVerdict = verdict;
 
-  if (verdict === "FAIL" || normalizedScore > 70) {
+  if (verdict === "FAIL" || normalizedScore >= 70) {
     trackColor = "bg-[#B84A4A]";
     textColor = "text-[#B84A4A]";
     label = "HIGH RISK / THREAT";
-  } else if (verdict === "REVIEW" || normalizedScore > 30) {
+    displayVerdict = "FAIL";
+  } else if (verdict === "REVIEW" || (normalizedScore >= 30 && normalizedScore < 70)) {
     trackColor = "bg-[#C58A32]";
     textColor = "text-[#C58A32]";
-    label = "MODERATE RISK";
+    label = "ELEVATED RISK / REVIEW";
+    displayVerdict = "REVIEW";
+  } else {
+    displayVerdict = "PASS";
   }
 
   return (
@@ -26,8 +31,8 @@ export function RiskScoreGauge({ score = 0, verdict = "PASS", className }) {
           Composite Risk Assessment
         </span>
         <span className={cn("text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded border", 
-          verdict === "FAIL" || normalizedScore > 70 ? "bg-[#B84A4A]/10 text-[#B84A4A] border-[#B84A4A]/30" :
-          verdict === "REVIEW" || normalizedScore > 30 ? "bg-[#C58A32]/10 text-[#C58A32] border-[#C58A32]/30" :
+          displayVerdict === "FAIL" ? "bg-[#B84A4A]/10 text-[#B84A4A] border-[#B84A4A]/30" :
+          displayVerdict === "REVIEW" ? "bg-[#C58A32]/10 text-[#C58A32] border-[#C58A32]/30" :
           "bg-[#2F7D5A]/10 text-[#2F7D5A] border-[#2F7D5A]/30"
         )}>
           {label}
@@ -42,7 +47,7 @@ export function RiskScoreGauge({ score = 0, verdict = "PASS", className }) {
           <span className="text-xs font-medium text-[#71807A]">/ 100</span>
         </div>
         <div className="text-xs font-semibold text-[#283733]">
-          Verdict: <span className={textColor}>{verdict}</span>
+          Verdict: <span className={textColor}>{displayVerdict}</span>
         </div>
       </div>
 
