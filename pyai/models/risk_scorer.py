@@ -7,7 +7,7 @@ class RiskScorer:
             self.weights = cfg["risk_weights"]
             self.thresholds = cfg["thresholds"]["risk"]
 
-    def calculate_risk(self, ocr_results, tampering_results, face_results, in_watchlist=False):
+    def calculate_risk(self, ocr_results, tampering_results, face_results, in_watchlist=False, network_risk_score=0.0):
         """
         Calculates a composite risk score from 0-100 based on weighted module outputs.
         Higher score means higher risk of forgery/impersonation.
@@ -32,6 +32,10 @@ class RiskScorer:
         # 4. Watchlist (10%)
         if in_watchlist:
             score += self.weights["watchlist"] * 100
+            
+        # 5. Network Risk Score (0-100 scale, but usually we add it)
+        # Assuming network_risk_score is passed in as points.
+        score += network_risk_score
             
         score = min(max(score, 0.0), 100.0)
         

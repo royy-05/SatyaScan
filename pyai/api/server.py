@@ -67,6 +67,8 @@ def health_check():
 async def scan_document(
     id_image: UploadFile = File(...),
     doc_type: str = Form("AADHAAR"), # AADHAAR, PAN, PASSPORT
+    deviceHash: str = Form(None),
+    submitterId: str = Form(None),
     api_key: str = Security(verify_api_key)
 ):
     temp_path = f"temp/{id_image.filename}"
@@ -108,7 +110,13 @@ async def scan_document(
         
     return {
         "ocr": ocr_res,
-        "tampering": tamp_res
+        "tampering": tamp_res,
+        "external_database_hits": {
+            "efir": False,
+            "aml": False,
+            "court_history": False
+        },
+        "network_risk": 0.0
     }
 
 @app.post("/verify")
@@ -116,6 +124,8 @@ async def verify_identity(
     id_image: UploadFile = File(...),
     selfie_image: UploadFile = File(None),
     doc_type: str = Form("AADHAAR"),
+    deviceHash: str = Form(None),
+    submitterId: str = Form(None),
     api_key: str = Security(verify_api_key)
 ):
     id_path = f"temp/{id_image.filename}"
@@ -157,7 +167,10 @@ async def verify_identity(
     # Mock watchlist check
     in_watchlist = False
     
-    risk_res = risk_engine.calculate_risk(ocr_res, tamp_res, face_res, in_watchlist)
+    # Mock network risk score
+    network_risk = 0.0
+    
+    risk_res = risk_engine.calculate_risk(ocr_res, tamp_res, face_res, in_watchlist, network_risk)
     
     try:
         os.remove(id_path)
@@ -172,7 +185,13 @@ async def verify_identity(
             "tampering": tamp_res,
             "face_biometrics": face_res
         },
-        "risk_assessment": risk_res
+        "risk_assessment": risk_res,
+        "external_database_hits": {
+            "efir": False,
+            "aml": False,
+            "court_history": False
+        },
+        "network_risk": network_risk
     }
 
 if __name__ == "__main__":

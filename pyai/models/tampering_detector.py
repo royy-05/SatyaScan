@@ -20,7 +20,7 @@ class TamperingDetector:
         Error Level Analysis (ELA) to find regions with different compression levels.
         """
         if not Image:
-            return 0.0, None
+            return 0.0, False, []
 
         temp_filename = 'temp_ela.jpg'
         
@@ -46,12 +46,29 @@ class TamperingDetector:
             
             is_tampered = std_dev > (10 * self.ela_std_mult) # arbitrary threshold for demo
             
-            return std_dev, is_tampered
+            tampered_regions = []
+            if is_tampered:
+                # Convert ELA image to grayscale via OpenCV
+                gray = cv2.cvtColor(ela_array, cv2.COLOR_RGB2GRAY)
+                # Apply Otsu thresholding
+                _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                
+                # Find contours
+                contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                
+                # Filter small contours to extract bounding boxes
+                min_area = 100
+                for cnt in contours:
+                    if cv2.contourArea(cnt) > min_area:
+                        x, y, w, h = cv2.boundingRect(cnt)
+                        tampered_regions.append({"x": int(x), "y": int(y), "w": int(w), "h": int(h)})
+            
+            return std_dev, is_tampered, tampered_regions
             
         finally:
             if os.path.exists(temp_filename):
                 os.remove(temp_filename)
-        return 0.0, False
+        return 0.0, False, []
 
     def check_copy_move_sift(self, image_path):
         """
@@ -82,7 +99,7 @@ class TamperingDetector:
         return len(good_matches) > 15 
 
     def process(self, image_path):
-        ela_std, ela_flag = self.calculate_ela(image_path)
+        ela_std, ela_flag, tampered_regions = self.calculate_ela(image_path)
         sift_flag = self.check_copy_move_sift(image_path)
         
         # Combine signals using reliable techniques
@@ -92,5 +109,6 @@ class TamperingDetector:
             "is_tampered": is_tampered,
             "ela_std": float(ela_std),
             "sift_copy_move_detected": bool(sift_flag),
-            "deep_model_prob": 0.0 # Deprecated untrained mock model
+            "deep_model_prob": 0.0, # Deprecated untrained mock model
+            "tampered_regions": tampered_regions
         }

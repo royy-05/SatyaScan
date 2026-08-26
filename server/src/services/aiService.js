@@ -5,7 +5,7 @@ import { env } from "../config/env.js";
 import { logger } from "../config/logger.js";
 
 export const aiService = {
-  async verify({ filePath, docType }) {
+  async verify({ filePath, docType, deviceHash, submitterId }) {
     if (!env.PYTHON_AI_URL) {
       logger.info(`[aiService] Operating in STUB mode for docType: ${docType}`);
 
@@ -37,6 +37,8 @@ export const aiService = {
       const formData = new FormData();
       formData.append("id_image", fs.createReadStream(filePath));
       formData.append("doc_type", docType || "AADHAAR");
+      if (deviceHash) formData.append("deviceHash", deviceHash);
+      if (submitterId) formData.append("submitterId", submitterId);
 
       const response = await axios.post(`${env.PYTHON_AI_URL}/scan`, formData, {
         headers: {
@@ -129,6 +131,8 @@ export const aiService = {
         overallScore: score,
         verdict: verdict,
         engineVersion: "python-ai-1.0",
+        externalHits: aiData.external_database_hits || {},
+        networkRisk: aiData.network_risk || 0.0,
       };
     } catch (err) {
       logger.error(`[aiService] Live AI service request failed: ${err.message}`);

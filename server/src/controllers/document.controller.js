@@ -133,6 +133,48 @@ export const documentController = {
 
       const docType = docTypeParsed.data;
 
+      const deviceHash = req.headers["x-device-fingerprint"] || "unknown_device";
+      const ipAddress = req.headers["x-forwarded-for"] || req.ip || "unknown_ip";
+      const userAgent = req.headers["user-agent"] || "unknown_agent";
+      
+      const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000);
+      const velocityCount = await prisma.velocityEvent.count({
+        where: {
+          deviceHash,
+          actionType: "DOC_UPLOAD",
+          timestamp: { gte: tenMinsAgo },
+        },
+      });
+      
+      if (velocityCount >= 5) {
+         return sendError(res, "Rate limit exceeded. Too many uploads from this device.", "TOO_MANY_REQUESTS", 429);
+      }
+      
+      const device = await prisma.deviceFingerprint.upsert({
+        where: { deviceHash },
+        update: { ipAddress, userAgent },
+        create: { deviceHash, ipAddress, userAgent },
+      });
+      
+      await prisma.velocityEvent.create({
+        data: {
+          deviceHash,
+          actionType: "DOC_UPLOAD",
+        },
+      });
+      
+      const sharedUsers = await prisma.document.findMany({
+        where: { deviceHashId: device.id },
+        distinct: ['submitterId'],
+        select: { submitterId: true },
+      });
+      const sharedCount = sharedUsers.length;
+      let networkFlags = {};
+      if (sharedCount > 1) {
+          networkFlags.sharedDeviceNetwork = true;
+          networkFlags.sharedCount = sharedCount;
+      }
+
       // Save file securely using storage service abstraction
       const savedStorage = await storageService.save(req.file.buffer, req.file.originalname);
       const fileHash = await computeFileSha256(savedStorage.filePath);
@@ -148,6 +190,7 @@ export const documentController = {
           mimeType: savedStorage.mimeType,
           sizeBytes: savedStorage.sizeBytes,
           status: "PENDING",
+          deviceHashId: device.id,
         },
       });
 
@@ -175,6 +218,8 @@ export const documentController = {
           const aiResponse = await aiService.verify({
             filePath: savedStorage.filePath,
             docType,
+            deviceHash,
+            submitterId: req.user.id
           });
 
           const scoreEvaluated = scoringService.calculateScore(aiResponse);
@@ -192,6 +237,10 @@ export const documentController = {
               overallScore: scoreEvaluated.overallScore,
               verdict: scoreEvaluated.verdict,
               engineVersion: aiResponse.engineVersion || "stub-1.0",
+              efirHit: aiResponse.externalHits?.efir || false,
+              amlHit: aiResponse.externalHits?.aml || false,
+              courtHistoryHit: aiResponse.externalHits?.court_history || false,
+              networkFlags: networkFlags,
             },
           });
 

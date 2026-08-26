@@ -1,5 +1,6 @@
 import axios from "axios";
 import { toast } from "sonner";
+import { getDeviceFingerprint } from "../utils/fingerprint.js";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api/v1";
 
@@ -25,12 +26,20 @@ export const apiClient = axios.create({
   },
 });
 
-// Request Interceptor: Attach Access Token
+// Request Interceptor: Attach Access Token and Device Fingerprint
 apiClient.interceptors.request.use(
-  (config) => {
+  async (config) => {
     if (inMemoryToken) {
       config.headers.Authorization = `Bearer ${inMemoryToken}`;
     }
+    
+    try {
+      const fingerprint = await getDeviceFingerprint();
+      config.headers["X-Device-Fingerprint"] = fingerprint;
+    } catch (err) {
+      console.warn("Failed to get device fingerprint", err);
+    }
+    
     return config;
   },
   (error) => Promise.reject(error)

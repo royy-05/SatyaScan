@@ -87,12 +87,16 @@ model Document {
   deletedAt        DateTime?
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
+  
+  deviceHashId     String?
+  deviceFingerprint DeviceFingerprint? @relation(fields: [deviceHashId], references: [id])
 
   verifications   Verification[]
   reviewDecisions ReviewDecision[]
 
   @@index([submitterId])
   @@index([fileHash])
+  @@index([deviceHashId])
 }
 
 model Verification {
@@ -109,6 +113,12 @@ model Verification {
   overallScore         Float
   verdict              Verdict
   engineVersion        String
+  
+  efirHit              Boolean  @default(false)
+  amlHit               Boolean  @default(false)
+  courtHistoryHit      Boolean  @default(false)
+  networkFlags         Json?
+
   createdAt            DateTime @default(now())
 
   @@index([documentId])
@@ -143,4 +153,36 @@ model AuditLog {
   @@index([actorId])
   @@index([entityType, entityId])
   @@index([createdAt])
+}
+
+model DeviceFingerprint {
+  id         String   @id @default(cuid())
+  deviceHash String   @unique
+  ipAddress  String
+  userAgent  String
+  lastSeenAt DateTime @default(now()) @updatedAt
+
+  documents      Document[]
+  velocityEvents VelocityEvent[]
+}
+
+model VelocityEvent {
+  id         String   @id @default(cuid())
+  deviceHash String
+  actionType String
+  timestamp  DateTime @default(now())
+  
+  device     DeviceFingerprint @relation(fields: [deviceHash], references: [deviceHash])
+
+  @@index([deviceHash, timestamp])
+}
+
+model GlobalWatchlist {
+  id          String   @id @default(cuid())
+  entityType  String
+  entityValue String
+  threatLevel String
+  createdAt   DateTime @default(now())
+
+  @@index([entityValue])
 }
