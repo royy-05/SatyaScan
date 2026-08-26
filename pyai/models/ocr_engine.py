@@ -65,7 +65,7 @@ class OCREngine:
         # Format: 5 letters, 4 digits, 1 letter
         pan_pattern = r'\b[A-Z]{5}[0-9]{4}[A-Z]{1}\b'
         for text in texts:
-            if re.search(pan_pattern, text):
+            if re.search(pan_pattern, text, re.IGNORECASE):
                 return True
         return False
 
@@ -112,19 +112,18 @@ class OCREngine:
         return False
 
     def validate_dl(self, texts):
-        # Format: 2 letters, 2 digits, 4 digits year, 7 digits number (e.g. MH0420150034567)
-        # Note: formatting can sometimes have spaces, but we use a basic regex
-        dl_pattern = r'\b[A-Z]{2}[0-9]{2}[0-9]{4}[0-9]{7}\b'
+        # Format: 2 letters, 2 digits, optional space/hyphen, 10-14 digits (e.g. MH0420150034567)
+        dl_pattern = r'\b[A-Z]{2}[-\s]?\d{2}[\s\d]{10,14}\b'
         for text in texts:
-            if re.search(dl_pattern, text.replace(" ", "")):
+            if re.search(dl_pattern, text, re.IGNORECASE):
                 return True
         return False
 
     def validate_voter_id(self, texts):
-        # Format: 3 letters, 7 digits (e.g. ABC1234567)
-        voter_pattern = r'\b[A-Z]{3}[0-9]{7}\b'
+        # Format: 3 letters, optional space, 7 digits (e.g. ABC1234567)
+        voter_pattern = r'\b[A-Z]{3}[-\s]?[0-9]{7}\b'
         for text in texts:
-            if re.search(voter_pattern, text.replace(" ", "")):
+            if re.search(voter_pattern, text, re.IGNORECASE):
                 return True
         return False
 
