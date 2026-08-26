@@ -27,7 +27,18 @@ initSocketServer(server);
 
 // Security & Base Middlewares
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
-app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || origin.includes("localhost") || origin.includes("127.0.0.1") || origin.includes("ngrok") || env.CORS_ORIGIN === "*") {
+        callback(null, true);
+      } else {
+        callback(null, origin === env.CORS_ORIGIN);
+      }
+    },
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(requestIdMiddleware);

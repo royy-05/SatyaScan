@@ -10,7 +10,8 @@ export function useSocket(documentId = null) {
 
   useEffect(() => {
     socketRef.current = io(SOCKET_URL, {
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
+      withCredentials: true,
     });
 
     const socket = socketRef.current;

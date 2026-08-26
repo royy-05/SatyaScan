@@ -40,7 +40,11 @@ export function SubmissionDetailPage() {
   };
 
   useEffect(() => {
-    if (id) fetchDetail();
+    if (id && id !== "null" && id !== "undefined") {
+      fetchDetail();
+    } else {
+      setLoading(false);
+    }
   }, [id]);
 
   const handleReverify = async () => {

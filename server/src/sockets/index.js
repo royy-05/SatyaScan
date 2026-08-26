@@ -7,7 +7,14 @@ let ioInstance = null;
 export function initSocketServer(httpServer) {
   ioInstance = new Server(httpServer, {
     cors: {
-      origin: env.CORS_ORIGIN,
+      origin: (origin, callback) => {
+        // Allow requests with no origin or any local / ngrok origin in dev
+        if (!origin || origin.includes("localhost") || origin.includes("127.0.0.1") || origin.includes("ngrok") || env.CORS_ORIGIN === "*") {
+          callback(null, true);
+        } else {
+          callback(null, origin === env.CORS_ORIGIN);
+        }
+      },
       methods: ["GET", "POST"],
       credentials: true,
     },

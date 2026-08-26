@@ -8,7 +8,7 @@ export const aiService = {
   async verify({ filePath, docType }) {
     if (!env.PYTHON_AI_URL) {
       logger.info(`[aiService] Operating in STUB mode for docType: ${docType}`);
-      
+
       // Return fixed stub result as specified by spec
       return {
         docType: docType || "PASSPORT",
@@ -41,9 +41,9 @@ export const aiService = {
       const response = await axios.post(`${env.PYTHON_AI_URL}/scan`, formData, {
         headers: {
           ...formData.getHeaders(),
-           "X-API-Key": env.AI_API_KEY
+          "X-API-Key": env.AI_API_KEY
         },
-        timeout: 30000,
+        timeout: 25000,
       });
 
       const aiData = response.data;
@@ -61,18 +61,32 @@ export const aiService = {
       return {
         docType: docType || "AADHAAR",
         extracted: {
-          name: aiData.ocr?.texts_extracted?.[0] || "EXTRACTED_NAME",
-          docNumber: "UNKNOWN_DOC_NUM",
-          dob: "1990-01-01",
-          nationality: "IND",
-          expiry: "2030-01-01",
-          gender: "M",
+          name: aiData.ocr?.mrz_parsed?.surname
+            ? `${aiData.ocr.mrz_parsed.given_name || ""} ${aiData.ocr.mrz_parsed.surname}`.trim()
+            : aiData.ocr?.texts_extracted?.[0] || "EXTRACTED_NAME",
+          docNumber: aiData.ocr?.mrz_parsed?.document_number || "N/A",
+          dob: aiData.ocr?.mrz_parsed?.date_of_birth || "N/A",
+          nationality: aiData.ocr?.mrz_parsed?.nationality || "IND",
+          expiry: aiData.ocr?.mrz_parsed?.expiration_date || "N/A",
+          gender: aiData.ocr?.mrz_parsed?.sex || "N/A",
         },
         layers: {
-          ocr: { passed: true, confidence: 0.9, notes: "OCR completed." },
-          validation: { passed: isFormatValid, confidence: isFormatValid ? 1.0 : 0.0, notes: "Format validation" },
-          tampering: { passed: !isTampered, confidence: 1.0 - (aiData.tampering?.deep_model_prob || 0), notes: "Tampering check" },
-          face: { passed: true, confidence: 1.0, notes: "Mocked (No selfie)" },
+          ocr: {
+            passed: isFormatValid,
+            confidence: isFormatValid ? 0.95 : 0.4,
+            notes: isFormatValid ? "Document format & text valid." : "Invalid document structure."
+          },
+          validation: {
+            passed: isFormatValid,
+            confidence: isFormatValid ? 1.0 : 0.0,
+            notes: "Format validation"
+          },
+          tampering: {
+            passed: !isTampered,
+            confidence: parseFloat((1.0 - (aiData.tampering?.deep_model_prob || 0)).toFixed(2)),
+            notes: isTampered ? "Digital tampering / ELA anomaly detected." : "No digital copy-move or ELA anomalies."
+          },
+          face: { passed: true, confidence: 1.0, notes: "Face check not run (no selfie)" },
         },
         overallScore: score,
         verdict: verdict,

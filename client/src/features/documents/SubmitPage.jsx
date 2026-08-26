@@ -52,9 +52,12 @@ export function SubmitPage() {
       } else if (lastEvent.status === "done") {
         setStatusMessage("Verification complete!");
         toast.success("Verification finished!");
-        setTimeout(() => {
-          navigate(`/app/submissions/${submittedDocId}`);
-        }, 1200);
+        const targetId = submittedDocId || lastEvent.documentId;
+        if (targetId && targetId !== "null" && targetId !== "undefined") {
+          setTimeout(() => {
+            navigate(`/app/submissions/${targetId}`);
+          }, 1200);
+        }
       } else if (lastEvent.status === "failed") {
         setStatusMessage(`Verification failed: ${lastEvent.error || "Unknown error"}`);
         toast.error("Document verification encountered an error");
@@ -97,7 +100,10 @@ export function SubmitPage() {
     try {
       setStatusMessage("Uploading file to secure vault...");
       const result = await uploadDocument(selectedFile, selectedType, idempotencyKey);
-      setSubmittedDocId(result.id);
+      const docId = result?.id || result?.data?.id;
+      if (docId) {
+        setSubmittedDocId(docId);
+      }
       setStatusMessage("File stored. Waiting for AI engine status...");
     } catch (err) {
       setStatusMessage("Upload failed.");

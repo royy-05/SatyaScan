@@ -30,7 +30,11 @@ export function ReviewDetailPage() {
         setLoading(false);
       }
     }
-    if (documentId) loadDoc();
+    if (documentId && documentId !== "null" && documentId !== "undefined") {
+      loadDoc();
+    } else {
+      setLoading(false);
+    }
   }, [documentId]);
 
   const handleDecision = async (decision) => {
