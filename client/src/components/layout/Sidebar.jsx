@@ -1,7 +1,8 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { APP_ROUTES } from "../../routes/config";
+import LogoImg from "../../assets/Logo.png";
 import {
   LayoutDashboard,
   UploadCloud,
@@ -14,6 +15,7 @@ import {
   User,
   Shield,
   FileCheck2,
+  ScanLine,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 
@@ -28,6 +30,7 @@ const ICON_MAP = {
   BarChart3,
   User,
   FileCheck2,
+  ScanLine,
 };
 
 export function Sidebar() {
@@ -40,7 +43,7 @@ export function Sidebar() {
 
   // Group routes into sections
   const mainRoutes = allowedRoutes.filter((r) =>
-    ["/app/dashboard", "/app/submit", "/app/submissions"].includes(r.path)
+    ["/app/dashboard", "/app/scan", "/app/submit", "/app/submissions", "/app/profile"].includes(r.path)
   );
   const opsRoutes = allowedRoutes.filter((r) =>
     ["/app/reviews/queue", "/app/reviews/mine"].includes(r.path)
@@ -50,29 +53,32 @@ export function Sidebar() {
   );
 
   return (
-    <aside className="w-64 shrink-0 bg-[#283733] text-[#FDF6F0] border-r border-[#475853] flex flex-col h-screen sticky top-0 shadow-md">
-      {/* Official Brand Header */}
-      <div className="p-5 border-b border-[#475853] flex items-center space-x-3 bg-[#1e2a27]">
-        <div className="h-9 w-9 rounded bg-[#DBCEB1] flex items-center justify-center text-[#283733] shadow-sm">
-          <Shield className="h-5 w-5 stroke-[2.5]" />
-        </div>
-        <div>
-          <h1 className="font-extrabold text-base text-[#FDF6F0] tracking-wider uppercase flex items-center gap-1">
-            Satya<span className="text-[#DBCEB1]">Scan</span>
-          </h1>
-          <p className="text-[10px] font-semibold tracking-wider text-[#DBCEB1] uppercase">
-            Border Security & Forensics
-          </p>
-        </div>
+    <aside className="w-64 shrink-0 bg-white text-[#0F172A] border-r border-slate-200 flex flex-col h-screen sticky top-0 shadow-xs">
+      {/* Brand Header with Official Logo */}
+      <div className="p-5 border-b border-slate-100 flex items-center space-x-3 bg-white">
+        <Link to="/app/dashboard" className="flex items-center space-x-3">
+          {LogoImg ? (
+            <img src={LogoImg} alt="SatyaScan Logo" className="h-9 w-auto object-contain" />
+          ) : (
+            <div className="flex items-center space-x-2">
+              <div className="h-8 w-8 rounded-lg bg-[#0FA891] flex items-center justify-center font-extrabold text-white text-base">
+                S
+              </div>
+              <span className="font-extrabold text-lg tracking-tight text-[#0F172A]">
+                Satya<span className="text-[#0FA891]">Scan</span>
+              </span>
+            </div>
+          )}
+        </Link>
       </div>
 
       {/* Navigation Sections */}
-      <nav className="flex-1 p-3 space-y-5 overflow-y-auto">
+      <nav className="flex-1 p-3 space-y-6 overflow-y-auto">
         {/* Main Section */}
         {mainRoutes.length > 0 && (
           <div className="space-y-1">
-            <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-[#DBCEB1]/70">
-              Main Workstation
+            <div className="px-3 pb-1 text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">
+              Workstation Nav
             </div>
             {mainRoutes.map((route) => {
               const IconComponent = ICON_MAP[route.icon] || FileText;
@@ -82,14 +88,14 @@ export function Sidebar() {
                   to={route.path}
                   className={({ isActive }) =>
                     cn(
-                      "flex items-center space-x-3 px-3 py-2 rounded-md text-xs font-semibold tracking-wide transition-colors",
+                      "flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all duration-150",
                       isActive
-                        ? "bg-[#475853] text-[#DBCEB1] border-l-4 border-[#DBCEB1] font-bold"
-                        : "text-[#FDF6F0]/80 hover:bg-[#475853]/50 hover:text-[#FDF6F0]"
+                        ? "bg-[#0FA891] text-white font-bold shadow-xs"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-[#0F172A]"
                     )
                   }
                 >
-                  <IconComponent className="h-4 w-4 shrink-0 text-[#DBCEB1]" />
+                  <IconComponent className="h-4 w-4 shrink-0 text-current" />
                   <span>{route.label}</span>
                 </NavLink>
               );
@@ -100,7 +106,7 @@ export function Sidebar() {
         {/* Operations Section */}
         {opsRoutes.length > 0 && (
           <div className="space-y-1">
-            <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-[#DBCEB1]/70">
+            <div className="px-3 pb-1 text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">
               Operations & Review
             </div>
             {opsRoutes.map((route) => {
@@ -111,14 +117,14 @@ export function Sidebar() {
                   to={route.path}
                   className={({ isActive }) =>
                     cn(
-                      "flex items-center space-x-3 px-3 py-2 rounded-md text-xs font-semibold tracking-wide transition-colors",
+                      "flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all duration-150",
                       isActive
-                        ? "bg-[#475853] text-[#DBCEB1] border-l-4 border-[#DBCEB1] font-bold"
-                        : "text-[#FDF6F0]/80 hover:bg-[#475853]/50 hover:text-[#FDF6F0]"
+                        ? "bg-[#0FA891] text-white font-bold shadow-xs"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-[#0F172A]"
                     )
                   }
                 >
-                  <IconComponent className="h-4 w-4 shrink-0 text-[#DBCEB1]" />
+                  <IconComponent className="h-4 w-4 shrink-0 text-current" />
                   <span>{route.label}</span>
                 </NavLink>
               );
@@ -129,7 +135,7 @@ export function Sidebar() {
         {/* System Administration Section */}
         {systemRoutes.length > 0 && (
           <div className="space-y-1">
-            <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-[#DBCEB1]/70">
+            <div className="px-3 pb-1 text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">
               Intelligence & Admin
             </div>
             {systemRoutes.map((route) => {
@@ -140,14 +146,14 @@ export function Sidebar() {
                   to={route.path}
                   className={({ isActive }) =>
                     cn(
-                      "flex items-center space-x-3 px-3 py-2 rounded-md text-xs font-semibold tracking-wide transition-colors",
+                      "flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all duration-150",
                       isActive
-                        ? "bg-[#475853] text-[#DBCEB1] border-l-4 border-[#DBCEB1] font-bold"
-                        : "text-[#FDF6F0]/80 hover:bg-[#475853]/50 hover:text-[#FDF6F0]"
+                        ? "bg-[#0FA891] text-white font-bold shadow-xs"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-[#0F172A]"
                     )
                   }
                 >
-                  <IconComponent className="h-4 w-4 shrink-0 text-[#DBCEB1]" />
+                  <IconComponent className="h-4 w-4 shrink-0 text-current" />
                   <span>{route.label}</span>
                 </NavLink>
               );
@@ -155,16 +161,8 @@ export function Sidebar() {
           </div>
         )}
       </nav>
-
-      {/* Border Station Footer Badge */}
-      <div className="p-3 border-t border-[#475853] bg-[#1e2a27] text-xs">
-        <div className="flex items-center space-x-2 text-[#FDF6F0]">
-          <div className="h-2 w-2 rounded-full bg-[#2F7D5A]" />
-          <span className="font-bold text-[11px] uppercase tracking-wider text-[#DBCEB1]">SSB Border Control</span>
-        </div>
-        <p className="text-[10px] font-mono text-[#71807A] mt-1">Terminal ID: SSB-DEL-04</p>
-      </div>
     </aside>
   );
 }
 
+export default Sidebar;

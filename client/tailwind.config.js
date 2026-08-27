@@ -30,6 +30,22 @@ export default {
           sage: "#71807A",
           white: "#FFFFFF",
         },
+        brand: {
+          DEFAULT: "#0FA891",
+          hover: "#0D8F7B",
+          subtle: "rgba(15, 168, 145, 0.08)",
+        },
+        "brand-hover": "#0D8F7B",
+        "brand-subtle": "rgba(15, 168, 145, 0.08)",
+        "text-primary": "#0F172A",
+        "text-secondary": "#334155",
+        "text-tertiary": "#64748B",
+        "bg-primary": "#FFFFFF",
+        "bg-secondary": "#F8FAFC",
+        "border-subtle": "#E2E8F0",
+        "verdict-pass": "#059669",
+        "verdict-review": "#D97706",
+        "verdict-fail": "#DC2626",
         status: {
           pass: "#2F7D5A",
           review: "#C58A32",
@@ -72,7 +88,7 @@ export default {
         },
       },
       fontFamily: {
-        sans: ["Inter", "Public Sans", "sans-serif"],
+        sans: ["Inter", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "Roboto Mono", "monospace"],
       },
       borderRadius: {

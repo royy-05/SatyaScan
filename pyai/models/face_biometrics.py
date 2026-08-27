@@ -1,6 +1,10 @@
 import cv2
 import numpy as np
 import yaml
+import warnings
+
+# Suppress scikit-image deprecation warnings emitted by insightface face alignment
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 try:
     from insightface.app import FaceAnalysis

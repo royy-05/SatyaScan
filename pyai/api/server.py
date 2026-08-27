@@ -3,8 +3,8 @@ from pydantic import BaseModel
 import shutil
 import os
 import sys
-from fastapi.security import APIKeyHeader
-from dotenv import load_dotenv
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 load_dotenv()
 # Ensure modules can be imported

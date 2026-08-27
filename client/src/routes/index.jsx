@@ -2,13 +2,14 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { PrivateRoute } from "./PrivateRoute";
 import { RoleGuard } from "./RoleGuard";
+import { useAuth } from "../hooks/useAuth";
 import { AppShell } from "../components/layout/AppShell";
 
 import { LandingPage } from "../pages/Landing";
 import { LoginPage } from "../features/auth/LoginPage";
 import { RegisterPage } from "../features/auth/RegisterPage";
 import { DashboardPage } from "../features/documents/DashboardPage";
-import { SubmitPage } from "../features/documents/SubmitPage";
+import { SubmitterScanPage } from "../features/submitter/SubmitterScanPage";
 import { SubmissionsPage } from "../features/documents/SubmissionsPage";
 import { SubmissionDetailPage } from "../features/documents/SubmissionDetailPage";
 import { LiveFaceCapture } from "../features/documents/LiveFaceCapture";
@@ -22,13 +23,27 @@ import { ProfilePage } from "../pages/Profile";
 import { Forbidden403Page } from "../pages/Forbidden403";
 import { NotFound404Page } from "../pages/NotFound404";
 
+function SmartDashboard() {
+  const { user } = useAuth();
+  if (user?.role === "SUBMITTER") {
+    return <SubmitterScanPage />;
+  }
+  return <DashboardPage />;
+}
+
 export function AppRouter() {
   return (
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/login" element={<Navigate to="/login/submitter" replace />} />
+      <Route path="/login/submitter" element={<LoginPage role="SUBMITTER" />} />
+      <Route path="/login/officer" element={<LoginPage role="OFFICER" />} />
+      <Route path="/login/admin" element={<LoginPage role="ADMIN" />} />
+
+      <Route path="/register" element={<Navigate to="/register/submitter" replace />} />
+      <Route path="/register/submitter" element={<RegisterPage role="SUBMITTER" />} />
+      <Route path="/register/officer" element={<RegisterPage role="OFFICER" />} />
       <Route path="/403" element={<Forbidden403Page />} />
 
       {/* Protected App Routes */}
@@ -41,17 +56,18 @@ export function AppRouter() {
         }
       >
         <Route index element={<Navigate to="/app/dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="dashboard" element={<SmartDashboard />} />
 
-        {/* Submitter Routes */}
+        {/* Submitter Scan & Verification Terminal */}
         <Route
-          path="submit"
+          path="scan"
           element={
-            <RoleGuard allowedRoles={["SUBMITTER"]}>
-              <SubmitPage />
+            <RoleGuard allowedRoles={["SUBMITTER", "OFFICER"]}>
+              <SubmitterScanPage />
             </RoleGuard>
           }
         />
+        <Route path="submit" element={<Navigate to="/app/scan" replace />} />
 
         {/* Documents Routes */}
         <Route path="submissions" element={<SubmissionsPage />} />
@@ -118,3 +134,5 @@ export function AppRouter() {
     </Routes>
   );
 }
+
+export default AppRouter;

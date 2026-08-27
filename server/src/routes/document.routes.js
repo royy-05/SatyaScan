@@ -12,7 +12,7 @@ router.use(authenticateToken);
 
 router.post(
   "/",
-  requireRole("SUBMITTER"),
+  requireRole("SUBMITTER", "OFFICER"),
   strictLimiter,
   idempotencyMiddleware,
   uploadMiddleware.single("file"),

@@ -126,7 +126,12 @@ export const documentController = {
         return sendError(res, "Document file is required", "BAD_REQUEST", 400);
       }
 
-      const docTypeParsed = docTypeEnum.safeParse(req.body.docType);
+      let rawDocType = (req.body.docType || "").toUpperCase();
+      if (rawDocType === "AADHAAR" || rawDocType === "VOTER") {
+        rawDocType = "NATIONAL_ID";
+      }
+
+      const docTypeParsed = docTypeEnum.safeParse(rawDocType);
       if (!docTypeParsed.success) {
         return sendError(res, "Invalid document type", "BAD_REQUEST", 400);
       }
@@ -312,7 +317,15 @@ export const documentController = {
       }
 
       if (docType) where.docType = docType;
-      if (status) where.status = status;
+
+      if (status) {
+        if (status === "PENDING_REVIEW") {
+          where.verifications = { some: { verdict: "REVIEW" } };
+          where.reviewDecisions = { none: {} };
+        } else if (["PENDING", "PROCESSING", "VERIFIED", "FAILED"].includes(status)) {
+          where.status = status;
+        }
+      }
 
       if (dateFrom || dateTo) {
         where.createdAt = {};

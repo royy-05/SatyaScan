@@ -21,6 +21,7 @@ export function registerRefreshTokenHandler(handler) {
 
 export const apiClient = axios.create({
   baseURL: API_URL,
+  timeout: 180000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -109,6 +110,7 @@ apiClient.interceptors.response.use(
         }
       } catch (refreshErr) {
         processQueue(refreshErr, null);
+        window.location.href = "/";
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;

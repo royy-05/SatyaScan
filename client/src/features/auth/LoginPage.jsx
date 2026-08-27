@@ -1,22 +1,25 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
-import { ShieldCheck, KeyRound, Mail, ArrowRight, Shield } from "lucide-react";
+import { Mail, KeyRound, ArrowRight, Shield, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
+import LogoImg from "../../assets/Logo.png";
+import { HeroMockCard } from "../../pages/public/HeroMockCard";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
 });
 
-export function LoginPage() {
-  const { login } = useAuth();
+export function LoginPage({ role = "SUBMITTER" }) {
+  const { login, logout } = useAuth();
   const navigate = useNavigate();
+  const [inlineError, setInlineError] = useState("");
 
   const {
     register,
@@ -32,144 +35,227 @@ export function LoginPage() {
   });
 
   const onSubmit = async (data) => {
+    setInlineError("");
     try {
-      await login(data.email, data.password);
+      const userData = await login(data.email, data.password);
+
+      // Verify user role matches the route's role requirement
+      if (userData.role !== role) {
+        toast.error(`This login is for ${role} accounts. Please use the correct sign-in page.`);
+        await logout();
+        return;
+      }
+
       navigate("/app/dashboard");
-    } catch (_err) {
-      // Error handled by axios interceptor toast
+    } catch (err) {
+      if (err?.code === "PENDING_APPROVAL") {
+        setInlineError("Your account is awaiting administrator approval. Please check back later.");
+      } else if (err?.code === "REGISTRATION_REJECTED") {
+        setInlineError("Your account registration was not approved. Contact your administrator.");
+      }
+      // General credentials errors are handled by toast interceptor
     }
   };
 
-  const fillAdmin = () => {
-    setValue("email", "admin@satyascan.local");
-    setValue("password", "Admin@123");
-  };
-
-  const fillOfficer = () => {
-    setValue("email", "officer@satyascan.local");
-    setValue("password", "Officer@123");
-  };
-
-  const fillSubmitter = () => {
-    setValue("email", "submitter@satyascan.local");
-    setValue("password", "Submitter@123");
+  const handleQuickFill = () => {
+    if (role === "ADMIN") {
+      setValue("email", "admin@satyascan.local");
+      setValue("password", "Admin@123");
+    } else if (role === "OFFICER") {
+      setValue("email", "officer@satyascan.local");
+      setValue("password", "Officer@123");
+    } else {
+      setValue("email", "submitter@satyascan.local");
+      setValue("password", "Submitter@123");
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#FDF6F0] flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        {/* Official Brand Terminal Header */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex h-14 w-14 rounded-md bg-[#283733] border border-[#475853] items-center justify-center text-[#DBCEB1] mb-1 shadow-md">
-            <Shield className="h-8 w-8 stroke-[2.5]" />
+    <div className="min-h-screen bg-white flex flex-col lg:flex-row font-sans antialiased text-[#0F172A]">
+      {/* LEFT BRAND PANEL (50% Width Desktop) */}
+      <div className="hidden lg:flex lg:w-1/2 bg-[#0F172A] text-white px-8 py-8 xl:px-12 xl:py-10 flex-col justify-between relative overflow-hidden">
+        {/* Subtle Decorative Pattern */}
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#0FA891_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
+
+        {/* Section 1: Brand Header */}
+        <div className="relative z-10 space-y-3">
+          <Link to="/" className="inline-block">
+            {LogoImg ? (
+              <img src={LogoImg} alt="SatyaScan Logo" className="h-9 w-auto object-contain" />
+            ) : (
+              <div className="flex items-center space-x-2">
+                <div className="h-9 w-9 rounded-lg bg-[#0FA891] flex items-center justify-center font-extrabold text-xl">
+                  S
+                </div>
+                <span className="font-extrabold text-2xl tracking-tight">
+                  Satya<span className="text-[#0FA891]">Scan</span>
+                </span>
+              </div>
+            )}
+          </Link>
+          <div>
+            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs font-mono text-[#0FA891]">
+              <Shield className="h-3.5 w-3.5" />
+              <span>Ministry of Home Affairs · SSB Border Security</span>
+            </div>
           </div>
-          <h1 className="text-2xl font-extrabold text-[#283733] uppercase tracking-wider flex items-center justify-center gap-1">
-            Satya<span className="text-[#475853]">Scan</span>
-          </h1>
-          <p className="text-xs font-semibold text-[#71807A] uppercase tracking-widest">
-            Indian Border Security Checkpoint Terminal
-          </p>
         </div>
 
-        <Card className="border border-[#71807A]/30 bg-white shadow-md">
-          <CardHeader className="border-b border-[#71807A]/20 pb-4">
-            <CardTitle className="text-base font-extrabold uppercase tracking-wider text-[#283733]">
-              Checkpoint Operator Authentication
-            </CardTitle>
-            <CardDescription className="text-xs text-[#71807A]">
-              Sign in to your authorized border officer terminal session.
-            </CardDescription>
-          </CardHeader>
+        {/* Section 2: Tagline block + Section 3: Animated Verification Card */}
+        <div className="relative z-10 my-auto py-2 flex flex-col items-center">
+          {/* Tagline block */}
+          <div className="space-y-1.5 text-left w-full mb-2">
+            <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight leading-tight text-white">
+              Truth at the border.
+            </h1>
+            <p className="text-xs lg:text-sm text-slate-300 leading-relaxed">
+              AI-powered document verification for Indian border security.
+            </p>
+          </div>
 
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <CardContent className="space-y-4 pt-5">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#283733]">
-                  Operator Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-2.5 h-4 w-4 text-[#71807A]" />
-                  <Input
-                    {...register("email")}
-                    type="email"
-                    placeholder="officer@satyascan.local"
-                    className="pl-9 bg-[#FCF5EE] border-[#71807A]/30 text-xs font-mono"
-                  />
-                </div>
-                {errors.email && (
-                  <p className="text-xs text-[#B84A4A] font-semibold">{errors.email.message}</p>
-                )}
+          {/* HeroMockCard Wrapper with responsive CSS scaling */}
+          <div className="w-full max-w-md mx-auto my-2 flex justify-center items-center transform scale-[0.85] xl:scale-[0.9] origin-top">
+            <HeroMockCard />
+          </div>
+        </div>
+
+        {/* Section 4: Footer text */}
+        <div className="relative z-10 pt-3 border-t border-slate-800 text-xs font-mono text-slate-400">
+          Prototype for SIH 2026 · MHA · SSB
+        </div>
+      </div>
+
+      {/* RIGHT FORM PANEL (50% Width Desktop) */}
+      <div className="w-full lg:w-1/2 bg-white p-8 lg:p-16 flex items-center justify-center">
+        <div className="w-full max-w-md space-y-8">
+          {/* Header Title based on Role */}
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold tracking-tight text-[#0F172A]">
+              {role === "SUBMITTER" && "Submitter Sign In"}
+              {role === "OFFICER" && "Officer Sign In"}
+              {role === "ADMIN" && "Administrator Sign In"}
+            </h2>
+            <p className="text-sm text-[#334155]">
+              {role === "SUBMITTER" && "Access your document submission terminal"}
+              {role === "OFFICER" && "Access your review terminal"}
+              {role === "ADMIN" && "System administration access"}
+            </p>
+          </div>
+
+          {/* Inline Error Notice */}
+          {inlineError && (
+            <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start space-x-3 text-amber-800 text-xs leading-relaxed">
+              <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <span>{inlineError}</span>
+            </div>
+          )}
+
+          {/* Login Form */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-[#0F172A]">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-3 h-4 w-4 text-[#64748B]" />
+                <Input
+                  {...register("email")}
+                  type="email"
+                  placeholder={
+                    role === "ADMIN"
+                      ? "admin@satyascan.local"
+                      : role === "OFFICER"
+                      ? "officer@satyascan.local"
+                      : "submitter@satyascan.local"
+                  }
+                  className="pl-10 h-11 bg-white border-slate-300 text-[#0F172A] font-semibold placeholder:text-slate-400 focus:border-[#0FA891] text-sm"
+                />
               </div>
+              {errors.email && (
+                <p className="text-xs text-red-600 font-medium">{errors.email.message}</p>
+              )}
+            </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#283733]">
-                  Security Access Key
-                </label>
-                <div className="relative">
-                  <KeyRound className="absolute left-3 top-2.5 h-4 w-4 text-[#71807A]" />
-                  <Input
-                    {...register("password")}
-                    type="password"
-                    placeholder="••••••••"
-                    className="pl-9 bg-[#FCF5EE] border-[#71807A]/30 text-xs font-mono"
-                  />
-                </div>
-                {errors.password && (
-                  <p className="text-xs text-[#B84A4A] font-semibold">{errors.password.message}</p>
-                )}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-[#0F172A]">
+                Password
+              </label>
+              <div className="relative">
+                <KeyRound className="absolute left-3.5 top-3 h-4 w-4 text-[#64748B]" />
+                <Input
+                  {...register("password")}
+                  type="password"
+                  placeholder="••••••••"
+                  className="pl-10 h-11 bg-white border-slate-300 text-[#0F172A] font-semibold placeholder:text-slate-400 focus:border-[#0FA891] text-sm"
+                />
               </div>
-            </CardContent>
+              {errors.password && (
+                <p className="text-xs text-red-600 font-medium">{errors.password.message}</p>
+              )}
+            </div>
 
-            <CardFooter className="flex flex-col space-y-4 pt-2">
-              <Button
-                type="submit"
-                variant="primary"
-                disabled={isSubmitting}
-                className="w-full py-5 text-sm uppercase tracking-wider font-extrabold bg-[#283733] hover:bg-[#475853]"
-              >
-                {isSubmitting ? "Authenticating Session..." : "Sign In Terminal"}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full h-11 bg-[#0FA891] hover:bg-[#0D8F7B] text-white font-bold text-sm rounded-xl shadow-sm transition-all"
+            >
+              {isSubmitting ? "Authenticating..." : `Sign In as ${role}`}
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </form>
 
-              <div className="text-center text-xs text-[#71807A]">
-                Need account authorization?{" "}
-                <Link to="/register" className="text-[#475853] hover:underline font-bold">
-                  Account Provisioning Info
+          {/* Links Section based on Role */}
+          <div className="space-y-3 pt-2 text-xs text-center text-[#64748B]">
+            {role === "SUBMITTER" && (
+              <div>
+                Don't have an account?{" "}
+                <Link to="/register/submitter" className="text-[#0FA891] font-semibold hover:underline">
+                  Register here
                 </Link>
               </div>
-            </CardFooter>
-          </form>
-        </Card>
+            )}
 
-        {/* Demo Preset Helper */}
-        <div className="p-4 rounded-md border border-[#71807A]/25 bg-[#FCF5EE] text-center space-y-2">
-          <p className="text-xs font-bold text-[#283733] uppercase tracking-wider">Quick Test Credentials</p>
-          <div className="flex justify-center gap-2">
-            <button
-              onClick={fillAdmin}
-              type="button"
-              className="text-xs font-bold bg-[#283733] text-[#FDF6F0] px-3 py-1 rounded border border-[#475853]"
-            >
-              ADMIN
-            </button>
-            <button
-              onClick={fillOfficer}
-              type="button"
-              className="text-xs font-bold bg-[#DBCEB1] text-[#283733] px-3 py-1 rounded border border-[#71807A]/40"
-            >
-              OFFICER
-            </button>
-            <button
-              onClick={fillSubmitter}
-              type="button"
-              className="text-xs font-bold bg-white text-[#283733] px-3 py-1 rounded border border-[#71807A]/40"
-            >
-              SUBMITTER
-            </button>
+            {role === "OFFICER" && (
+              <>
+                <div>
+                  <Link to="/register/officer" className="text-[#0FA891] font-semibold hover:underline">
+                    Request officer access
+                  </Link>
+                </div>
+                <p className="text-[11px] text-[#64748B] italic">
+                  Officer accounts require administrator approval before activation.
+                </p>
+                <div className="pt-1">
+                  <Link to="/login/submitter" className="text-[#64748B] hover:text-[#0F172A] underline">
+                    Sign in as submitter
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
+
+          {/* Dev-only Quick Test Credentials */}
+          {import.meta.env.DEV && (
+            <div className="p-4 rounded-xl border border-dashed border-[#E2E8F0] bg-[#F8FAFC] text-center space-y-2 mt-6">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#64748B]">
+                Dev Helper: Fill Test {role} Credentials
+              </span>
+              <div>
+                <Button
+                  type="button"
+                  onClick={handleQuickFill}
+                  variant="outline"
+                  className="text-xs font-mono border-[#0FA891] text-[#0FA891] hover:bg-[#0FA891] hover:text-white"
+                >
+                  Fill {role} Test Account
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
+export default LoginPage;

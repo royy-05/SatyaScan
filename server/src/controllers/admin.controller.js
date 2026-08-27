@@ -261,4 +261,122 @@ export const adminController = {
       next(err);
     }
   },
+
+  async getPendingUsers(req, res, next) {
+    try {
+      const pendingUsers = await prisma.user.findMany({
+        where: {
+          status: "PENDING_APPROVAL",
+          deletedAt: null,
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          contactNumber: true,
+          registrationReason: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return sendSuccess(res, pendingUsers);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async approveUser(req, res, next) {
+    try {
+      const { id } = req.params;
+
+      const user = await prisma.user.findUnique({ where: { id } });
+      if (!user) {
+        return sendError(res, "User not found", "NOT_FOUND", 404);
+      }
+
+      const updated = await prisma.user.update({
+        where: { id },
+        data: {
+          status: "APPROVED",
+          approvedById: req.user.id,
+          approvedAt: new Date(),
+          isActive: true,
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          status: true,
+          approvedAt: true,
+          updatedAt: true,
+        },
+      });
+
+      await auditService.log({
+        actorId: req.user.id,
+        action: "USER_APPROVED",
+        entityType: "User",
+        entityId: id,
+        metadata: { approvedUserEmail: user.email, role: user.role },
+        ipAddress: req.ip,
+      });
+
+      return sendSuccess(res, updated);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async rejectUser(req, res, next) {
+    try {
+      const { id } = req.params;
+      const rejectSchema = z.object({
+        notes: z.string().min(10, "Rejection notes must be at least 10 characters long"),
+      });
+
+      const parsed = rejectSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return sendError(res, "Validation error", "VALIDATION_ERROR", 400, parsed.error.errors);
+      }
+
+      const user = await prisma.user.findUnique({ where: { id } });
+      if (!user) {
+        return sendError(res, "User not found", "NOT_FOUND", 404);
+      }
+
+      const updated = await prisma.user.update({
+        where: { id },
+        data: {
+          status: "REJECTED",
+          approvedById: req.user.id,
+          approvedAt: new Date(),
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          status: true,
+          approvedAt: true,
+          updatedAt: true,
+        },
+      });
+
+      await auditService.log({
+        actorId: req.user.id,
+        action: "USER_REJECTED",
+        entityType: "User",
+        entityId: id,
+        metadata: { notes: parsed.data.notes, rejectedUserEmail: user.email },
+        ipAddress: req.ip,
+      });
+
+      return sendSuccess(res, updated);
+    } catch (err) {
+      next(err);
+    }
+  },
 };

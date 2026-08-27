@@ -15,6 +15,7 @@ async function main() {
     update: {
       passwordHash: adminPasswordHash,
       role: "ADMIN",
+      status: "APPROVED",
       isActive: true,
     },
     create: {
@@ -22,6 +23,7 @@ async function main() {
       name: "System Administrator",
       passwordHash: adminPasswordHash,
       role: "ADMIN",
+      status: "APPROVED",
       isActive: true,
     },
   });
@@ -31,6 +33,7 @@ async function main() {
     update: {
       passwordHash: officerPasswordHash,
       role: "OFFICER",
+      status: "APPROVED",
       isActive: true,
     },
     create: {
@@ -38,6 +41,7 @@ async function main() {
       name: "Border Officer Vikram",
       passwordHash: officerPasswordHash,
       role: "OFFICER",
+      status: "APPROVED",
       isActive: true,
     },
   });
@@ -47,6 +51,7 @@ async function main() {
     update: {
       passwordHash: submitterPasswordHash,
       role: "SUBMITTER",
+      status: "APPROVED",
       isActive: true,
     },
     create: {
@@ -54,6 +59,7 @@ async function main() {
       name: "Agent Submitter",
       passwordHash: submitterPasswordHash,
       role: "SUBMITTER",
+      status: "APPROVED",
       isActive: true,
     },
   });

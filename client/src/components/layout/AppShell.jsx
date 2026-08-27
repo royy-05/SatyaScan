@@ -5,7 +5,7 @@ import { Topbar } from "./Topbar";
 
 export function AppShell() {
   return (
-    <div className="min-h-screen bg-[#FDF6F0] flex text-[#283733] font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] flex text-[#0F172A] font-sans antialiased">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar />
@@ -17,3 +17,4 @@ export function AppShell() {
   );
 }
 
+export default AppShell;

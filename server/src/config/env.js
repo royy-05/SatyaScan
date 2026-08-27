@@ -21,6 +21,7 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default("http://localhost:5173"),
   AI_API_KEY: z.string().default("satyascan-secret-key-2026"),
   PYTHON_AI_URL: z.string().optional().default(""),
+  OFFICER_INVITE_CODE: z.string().min(8).default("OFFICER-SSB-2026"),
 });
 
 const parsed = envSchema.safeParse(process.env);

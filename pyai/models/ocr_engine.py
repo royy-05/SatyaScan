@@ -92,7 +92,8 @@ class OCREngine:
             clean_text = text.replace(" ", "").upper()
             
             # Look for MRZ Line 2 (TD3 format: 44 chars)
-            if len(clean_text) == 44 and re.match(r'^[A-Z0-9<]{44}$', clean_text):
+            if 42 <= len(clean_text) <= 46 and re.match(r'^[A-Z0-9<]{42,46}$', clean_text):
+                clean_text = clean_text[:44].ljust(44, '<')
                 try:
                     passport_no = clean_text[0:9]
                     pass_check = int(clean_text[9]) if clean_text[9] != '<' else 0
@@ -119,15 +120,15 @@ class OCREngine:
         return False
 
     def validate_dl(self, texts):
-        # Format: 2 letters, 2 digits, optional space/hyphen, 10-14 digits (e.g. MH0420150034567)
-        dl_pattern = r'\b[A-Z]{2}[-\s]?\d{2}[\s\d]{10,14}\b'
+        # Format: 2 letters, 2 digits, optional space/hyphen/slash, 10-14 digits (e.g. MH0420150034567 or KA-01/2020/0012345)
+        dl_pattern = r'\b[A-Z]{2}[-\s/]?\d{2}[-\s/]?[\d\s/]{8,14}\b'
         for text in texts:
             if re.search(dl_pattern, text, re.IGNORECASE):
                 return True
         return False
 
     def validate_voter_id(self, texts):
-        # Format: 3 letters, optional space, 7 digits (e.g. ABC1234567)
+        # Format: 3 letters, optional space/hyphen, 7 digits (e.g. ABC1234567)
         voter_pattern = r'\b[A-Z]{3}[-\s]?[0-9]{7}\b'
         for text in texts:
             if re.search(voter_pattern, text, re.IGNORECASE):
@@ -137,49 +138,67 @@ class OCREngine:
     def parse_aadhaar(self, texts_extracted):
         all_text = " ".join(texts_extracted)
         
-        # 12-digit Aadhaar, often "XXXX XXXX XXXX"
-        aadhaar_match = re.search(r'\b(\d{4}\s?\d{4}\s?\d{4})\b', all_text)
+        # 12-digit Aadhaar, avoiding VID and enrolment numbers
+        aadhaar_match = None
+        for line in texts_extracted:
+            m = re.search(r'\b(\d{4}\s?\d{4}\s?\d{4})\b', line)
+            if m:
+                line_lower = line.lower()
+                if "vid" not in line_lower and "enrol" not in line_lower and "enrollment" not in line_lower:
+                    aadhaar_match = m
+                    break
+                    
+        if not aadhaar_match:
+            aadhaar_match = re.search(r'\b(\d{4}\s?\d{4}\s?\d{4})\b', all_text)
+
+        NON_NAME_WORDS = {
+            "government", "india", "authority", "identification", "unique",
+            "aadhaar", "uidai", "address", "enrolment", "enrollment", "male",
+            "female", "date", "birth", "mobile", "vid", "signature", "verified",
+            "venfed", "your", "keep", "download", "help", "www", "gov", "state",
+            "district", "code", "flat", "floor", "road", "east", "west",
+            "north", "south", "bengal", "delhi", "mumbai", "kolkata", "father",
+            "husband", "wife", "son", "daughter", "post", "office", "village",
+            "town", "city", "pin", "no", "number", "issued", "print", "information",
+            "apartment", "road", "alambazar"
+        }
         
-        # Name - find candidate closest to DOB to bypass e-Aadhaar letterhead typos
         dob_idx = -1
         for i, line in enumerate(texts_extracted):
-            if re.search(r'(?:DOB|D[OG]B|Date of Birth).*?\d{2}', line, re.IGNORECASE):
+            if re.search(r'(?:DOB|D[OGB]B|Date of Birth|Birth).*?\d{2}', line, re.IGNORECASE):
                 dob_idx = i
                 break
-                
+
         name = None
         name_candidates = []
         for i, line in enumerate(texts_extracted):
-            cleaned_line = line.strip()
-            if re.match(r'^[A-Za-z]{3,}\s[A-Za-z\s]+$', cleaned_line):
-                ignore_list = [
-                    "government of india", "india", 
-                    "unique identification authority of india", 
-                    "signature not verified", "signature not venfed",
-                    "signature verified"
-                ]
-                if cleaned_line.lower() not in ignore_list:
-                    name_candidates.append((i, cleaned_line))
-        
+            cleaned = line.strip()
+            if re.match(r'^[A-Z][A-Za-z]+(?:\s[A-Z][A-Za-z]+){1,3}$', cleaned):
+                words_lower = [w.lower() for w in cleaned.split()]
+                if not any(bad in words_lower for bad in NON_NAME_WORDS):
+                    if 3 <= len(cleaned) <= 40:
+                        name_candidates.append((i, cleaned))
+                        
         if name_candidates:
             if dob_idx != -1:
-                # Pick the name candidate that is closest to (but before) the DOB line
-                valid_candidates = [c for c in name_candidates if c[0] < dob_idx]
-                if valid_candidates:
-                    valid_candidates.sort(key=lambda c: dob_idx - c[0])
-                    name = valid_candidates[0][1]
-            
+                before_dob = [c for c in name_candidates if c[0] < dob_idx]
+                if before_dob:
+                    before_dob.sort(key=lambda c: dob_idx - c[0])
+                    name = before_dob[0][1]
             if not name:
-                # Fallback to the very first valid name found
                 name = name_candidates[0][1]
-        
-        dob_match = re.search(r'(?:DOB|D[OG]B|Date of Birth)[:\s/]*(\d{2}/\d{2}/\d{4})', all_text, re.IGNORECASE)
+
+        # Support DOB slashes /, hyphens -, dots .
+        dob_match = re.search(r'(?:DOB|D[OGB]B|Date of Birth)[:\s/]*(\d{2}[-/\.]\d{2}[-/\.]\d{4})', all_text, re.IGNORECASE)
+        if not dob_match:
+            dob_match = re.search(r'\b(\d{2}[-/\.]\d{2}[-/\.]\d{4})\b', all_text)
+            
         gender_match = re.search(r'\b(MALE|FEMALE)\b', all_text, re.IGNORECASE)
         
         return {
             "doc_number": aadhaar_match.group(1).replace(" ", "") if aadhaar_match else None,
             "name": name,
-            "dob": dob_match.group(1) if dob_match else None,
+            "dob": dob_match.group(1).replace('.', '/').replace('-', '/') if dob_match else None,
             "gender": gender_match.group(1).upper() if gender_match else None,
         }
 
@@ -196,48 +215,53 @@ class OCREngine:
             digit_section = digit_section.translate(str.maketrans('OISZB', '01528'))
             pan_number = pan_number[:5] + digit_section + pan_number[9:]
             
-        # Name extraction: anchor to DOB line (Name is usually 2 lines before DOB)
+        # Name extraction: look for candidates near DOB line that aren't header text
         name = None
         dob_idx = -1
         for i, line in enumerate(texts_extracted):
-            if re.search(r'\b(\d{2}/\d{2}/\d{4})\b', line):
+            if re.search(r'\b\d{2}[-/\.]\d{2}[-/\.]\d{4}\b', line):
                 dob_idx = i
                 break
                 
-        if dob_idx >= 2:
-            name = texts_extracted[dob_idx - 2].strip()
-            
+        if dob_idx >= 1:
+            for i in range(max(0, dob_idx - 3), dob_idx):
+                line = texts_extracted[i].strip()
+                if re.match(r'^[A-Z\s\.]{3,35}$', line):
+                    line_upper = line.upper()
+                    if not any(header in line_upper for header in ["INCOME", "TAX", "GOVT", "INDIA", "DEPARTMENT"]):
+                        name = line
+                        break
+                        
         if not name:
             # Fallback for older PAN cards that explicitly print "Name:"
-            name_match = re.search(r'Name[:\s]+([A-Z\s\.]+?)(?:\n|Father|DOB|$)', all_text, re.IGNORECASE)
+            name_match = re.search(r'(?:Name|Holder Name)[:\s]+([A-Z\s\.]+?)(?:\n|Father|DOB|$)', all_text, re.IGNORECASE)
             name = name_match.group(1).strip() if name_match else None
         
-        # DOB
-        dob_match = re.search(r'\b(\d{2}/\d{2}/\d{4})\b', all_text)
+        # DOB: support slashes, hyphens, dots
+        dob_match = re.search(r'\b(\d{2}[-/\.]\d{2}[-/\.]\d{4})\b', all_text)
         
         return {
             "doc_number": pan_number,
             "name": name,
-            "dob": dob_match.group(1) if dob_match else None,
+            "dob": dob_match.group(1).replace('.', '/').replace('-', '/') if dob_match else None,
         }
 
     def parse_dl(self, texts_extracted):
         all_text = " ".join(texts_extracted)
         
-        # DL format varies by state, common: XX-YYYYYYYYYYYYY or XX0000000000000
-        dl_match = re.search(r'\b([A-Z]{2}[-\s]?\d{2}[\s\d]{10,14})\b', all_text, re.IGNORECASE)
+        # DL format: XX0020150034567 or XX-04/2015/0034567
+        dl_match = re.search(r'\b([A-Z]{2}[-\s/]?\d{2}[-\s/]?[\d\s/]{8,14})\b', all_text, re.IGNORECASE)
         
-        # 1. Robust Name Extraction (Handles EasyOCR bounding box jitter)
-        name_match = re.search(r'Name[\s:]*([A-Z\s]+?)(?=\s*(?:Date|D\.?O\.?B|S/O|D/O|W/O|Son|Daughter|Wife|Blood|$))', all_text, re.IGNORECASE)
+        # Name extraction
+        name_match = re.search(r'(?:Name|Holder Name|Licencee Name)[\s:]*([A-Z\s]+?)(?=\s*(?:Date|D\.?O\.?B|S/O|D/O|W/O|Son|Daughter|Wife|Blood|$))', all_text, re.IGNORECASE)
         name = name_match.group(1).strip() if name_match else None
         
         if not name or len(name) < 3:
-            # If name wasn't found or is just a stray letter, look for it BEFORE the "Name:" label
-            name_before = re.search(r'([A-Z\s]+?)\s+Name[\s:]', all_text, re.IGNORECASE)
+            name_before = re.search(r'([A-Z\s]+?)\s+(?:Name|Holder Name)[\s:]', all_text, re.IGNORECASE)
             if name_before:
                 name = name_before.group(1).strip()
                 
-        # 2. Robust Date Extraction (Sorts all dates to bypass OCR label misalignment)
+        # Dates extraction
         date_strs = re.findall(r'\b\d{2}[-/]\d{2}[-/]\d{4}\b', all_text)
         dob = None
         expiry = None
@@ -255,9 +279,7 @@ class OCREngine:
                     
             if parsed_dates:
                 parsed_dates.sort(key=lambda x: x[0])
-                # Earliest date is always Date of Birth
                 dob = parsed_dates[0][1]
-                # Latest date is always Expiry Date (if multiple dates found)
                 if len(parsed_dates) >= 2:
                     expiry = parsed_dates[-1][1]
         
@@ -271,18 +293,34 @@ class OCREngine:
     def parse_voter_id(self, texts_extracted):
         all_text = " ".join(texts_extracted)
         
-        # EPIC format: 3 letters + 7 digits (e.g., ABC1234567)
+        # EPIC format: 3 letters + 7 digits (e.g. ABC1234567)
         epic_match = re.search(r'\b([A-Z]{3}[-\s]?\d{7})\b', all_text, re.IGNORECASE)
         
-        name_match = re.search(r'Name[:\s]+([A-Z\s\.]+?)(?:\n|Father|Age|$)', all_text, re.IGNORECASE)
+        name_match = re.search(r'(?:Elector\'s\s+Name|Name|Elector Name)[:\s]+([A-Z\s\.]+?)(?:\n|Father|Husband|Mother|Age|$)', all_text, re.IGNORECASE)
         dob_match = re.search(r'(?:DOB|Date of Birth|Age)[:\s]+(\d{2}[-/]\d{2}[-/]\d{4})', all_text, re.IGNORECASE)
-        gender_match = re.search(r'\b(MALE|FEMALE|M|F)\b', all_text, re.IGNORECASE)
         
+        # Age integer fallback if full DOB date string is missing
+        if not dob_match:
+            age_match = re.search(r'\bAge[:\s]+(\d{2})\b', all_text, re.IGNORECASE)
+            if age_match:
+                approx_year = 2026 - int(age_match.group(1))
+                dob_val = f"01/01/{approx_year}"
+            else:
+                dob_val = None
+        else:
+            dob_val = dob_match.group(1)
+
+        gender_match = re.search(r'\b(MALE|FEMALE|M|F)\b', all_text, re.IGNORECASE)
+        gender_val = None
+        if gender_match:
+            g = gender_match.group(1).upper()
+            gender_val = "MALE" if g in ("M", "MALE") else "FEMALE" if g in ("F", "FEMALE") else g
+
         return {
             "doc_number": epic_match.group(1).upper().replace(" ", "").replace("-", "") if epic_match else None,
             "name": name_match.group(1).strip() if name_match else None,
-            "dob": dob_match.group(1) if dob_match else None,
-            "gender": gender_match.group(1).upper() if gender_match else None,
+            "dob": dob_val,
+            "gender": gender_val,
         }
 
     def parse_passport_mrz(self, texts_extracted):
@@ -290,11 +328,14 @@ class OCREngine:
         mrz_lines = []
         for text in texts_extracted:
             clean_text = text.replace(" ", "").upper()
-            if len(clean_text) == 44 and re.match(r'^[A-Z0-9<]{44}$', clean_text):
+            if 42 <= len(clean_text) <= 46 and re.match(r'^[A-Z0-9<]{42,46}$', clean_text):
+                if len(clean_text) < 44:
+                    clean_text = clean_text.ljust(44, '<')
+                elif len(clean_text) > 44:
+                    clean_text = clean_text[:44]
                 mrz_lines.append(clean_text)
                 
         if len(mrz_lines) >= 2:
-            # Ensure Line 1 is the one starting with P< or V<
             is_line1 = lambda l: l.startswith('P<') or l.startswith('P ') or l.startswith('V<') or l.startswith('V ')
             if is_line1(mrz_lines[1]) and not is_line1(mrz_lines[0]):
                 mrz_lines[0], mrz_lines[1] = mrz_lines[1], mrz_lines[0]
@@ -302,22 +343,17 @@ class OCREngine:
             line1 = mrz_lines[0]
             line2 = mrz_lines[1]
             
-            # Name from Line 1 (P<IND[NAME]<<[SURNAME] or V<IND[NAME]<<[SURNAME])
             name_raw = line1[5:].strip('<')
             parsed['name'] = name_raw.replace('<<', ' ').replace('<', ' ').strip()
-            
-            # Data from Line 2
             parsed['doc_number'] = line2[0:9].replace('<', '')
             
             dob_raw = line2[13:19]
             if len(dob_raw) == 6 and dob_raw.isdigit():
-                # Century heuristic for DOB
                 prefix = "19" if int(dob_raw[0:2]) > 30 else "20"
                 parsed['dob'] = f"{dob_raw[4:6]}/{dob_raw[2:4]}/{prefix}{dob_raw[0:2]}"
                 
             exp_raw = line2[21:27]
             if len(exp_raw) == 6 and exp_raw.isdigit():
-                # Century heuristic for Expiry (usually future)
                 prefix = "19" if int(exp_raw[0:2]) > 50 else "20"
                 parsed['expiry'] = f"{exp_raw[4:6]}/{exp_raw[2:4]}/{prefix}{exp_raw[0:2]}"
                 
@@ -325,12 +361,10 @@ class OCREngine:
             if gender in ('M', 'F'):
                 parsed['gender'] = 'MALE' if gender == 'M' else 'FEMALE'
                 
-        # Fallback for noisy OCR (e.g. Visas with cropped '<' characters)
         if not parsed.get('name') or not parsed.get('dob'):
             all_text = "".join(texts_extracted).upper().replace(" ", "")
             
             if not parsed.get('name'):
-                # Search individual text blocks to prevent greedy bleeding into Line 2
                 for text in texts_extracted:
                     clean = text.upper().replace(" ", "")
                     if re.match(r'^[PV][A-Z<]{1,2}[A-Z]{3}[A-Z<]+', clean):
@@ -339,11 +373,9 @@ class OCREngine:
                             parsed['name'] = name_match.group(1).replace('<<', ' ').replace('<', ' ').strip()
                         break
                         
-            # If still not found, try the joined text as a last resort
             if not parsed.get('name'):
                 name_match = re.search(r'[PV][A-Z<]{1,2}([A-Z]{3})([A-Z]+(?:<+[A-Z]+)+)', all_text)
                 if name_match:
-                    # Try to truncate at doc number if we already know it
                     raw_name = name_match.group(2)
                     if parsed.get('doc_number') and parsed['doc_number'] in raw_name:
                         raw_name = raw_name.split(parsed['doc_number'])[0]
@@ -385,7 +417,7 @@ class OCREngine:
             return self.parse_pan(texts_extracted)
         elif doc_type in ("DRIVING_LICENSE", "DL"):
             return self.parse_dl(texts_extracted)
-        elif doc_type in ("VOTER_ID", "EPIC"):
+        elif doc_type in ("VOTER_ID", "VOTER", "EPIC"):
             return self.parse_voter_id(texts_extracted)
         else:
             return {}
@@ -397,21 +429,22 @@ class OCREngine:
             print(f"  {i}: '{t}'")
             
         is_valid = False
+        doc_type_upper = doc_type.upper()
         
-        if doc_type == "AADHAAR":
+        if doc_type_upper in ("AADHAAR", "NATIONAL_ID"):
             is_valid = self.validate_aadhaar(texts)
             print(f"[DEBUG] validate_aadhaar returned {is_valid}")
-        elif doc_type == "PAN":
+        elif doc_type_upper == "PAN":
             is_valid = self.validate_pan(texts)
-        elif doc_type in ("PASSPORT", "VISA"):
+        elif doc_type_upper in ("PASSPORT", "VISA"):
             is_valid = self.validate_mrz(texts)
-        elif doc_type == "DL":
+        elif doc_type_upper in ("DRIVING_LICENSE", "DL"):
             is_valid = self.validate_dl(texts)
-        elif doc_type == "VOTER_ID":
+        elif doc_type_upper in ("VOTER_ID", "VOTER", "EPIC"):
             is_valid = self.validate_voter_id(texts)
             
-        parsed_fields = self.extract_parsed_fields(texts, doc_type)
-        mrz_parsed = parsed_fields if doc_type in ("PASSPORT", "VISA") else {}
+        parsed_fields = self.extract_parsed_fields(texts, doc_type_upper)
+        mrz_parsed = parsed_fields if doc_type_upper in ("PASSPORT", "VISA") else {}
 
         return {
             "texts_extracted": texts,

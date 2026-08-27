@@ -1,9 +1,12 @@
 import { rateLimit } from "express-rate-limit";
 import { sendError } from "../utils/responseEnvelope.js";
 
+const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === "development";
+
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 100,
+  limit: 1000,
+  skip: () => isDev,
   standardHeaders: "draft-7",
   legacyHeaders: false,
   handler: (_req, res) => {
@@ -13,7 +16,8 @@ export const generalLimiter = rateLimit({
 
 export const strictLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  limit: 10,
+  limit: 50,
+  skip: () => isDev,
   standardHeaders: "draft-7",
   legacyHeaders: false,
   handler: (_req, res) => {

@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/DropdownMenu";
-import { User, LogOut, ShieldCheck } from "lucide-react";
+import { User, LogOut } from "lucide-react";
 
 export function Topbar() {
   const { user, logout } = useAuth();
@@ -38,21 +38,13 @@ export function Topbar() {
   };
 
   return (
-    <header className="h-14 bg-[#283733] text-[#FDF6F0] border-b border-[#475853] px-6 flex items-center justify-between sticky top-0 z-40 shadow-sm">
+    <header className="h-16 bg-white text-[#0F172A] border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-40 shadow-xs">
+      {/* Left side empty or brand spacing */}
       <div className="flex items-center space-x-3">
-        <ShieldCheck className="h-5 w-5 text-[#DBCEB1]" />
-        <h2 className="text-xs font-bold uppercase tracking-widest text-[#FDF6F0]">
-          Official Checkpoint Terminal <span className="text-[#DBCEB1] font-mono">#04</span>
-        </h2>
+        {/* Clean spacing, no checkpoint text */}
       </div>
 
       <div className="flex items-center space-x-4">
-        {/* System Telemetry Status Indicator */}
-        <div className="hidden md:flex items-center space-x-2 text-[11px] font-mono bg-[#1e2a27] px-2.5 py-1 rounded border border-[#475853]">
-          <span className="h-2 w-2 rounded-full bg-[#2F7D5A] animate-pulse" />
-          <span className="text-[#DBCEB1] font-semibold">SYSTEM OPERATIONAL</span>
-        </div>
-
         {/* User Role Badge */}
         <Badge variant={getRoleBadgeVariant(user.role)}>
           {user.role}
@@ -61,38 +53,38 @@ export function Topbar() {
         {/* User Profile Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger className="focus:outline-none">
-            <div className="flex items-center space-x-2.5 p-1 rounded hover:bg-[#475853]/50 transition-colors">
-              <Avatar className="h-7 w-7 border border-[#DBCEB1]">
-                <AvatarFallback className="bg-[#475853] text-[#DBCEB1] text-xs font-bold">
+            <div className="flex items-center space-x-2.5 p-1 rounded-xl hover:bg-slate-100 transition-colors">
+              <Avatar className="h-8 w-8 border border-[#0FA891]">
+                <AvatarFallback className="bg-[#0FA891] text-white text-xs font-bold">
                   {initials}
                 </AvatarFallback>
               </Avatar>
               <div className="text-left hidden sm:block">
-                <p className="text-xs font-bold text-[#FDF6F0] leading-tight">
+                <p className="text-xs font-bold text-[#0F172A] leading-tight">
                   {user.name}
                 </p>
-                <p className="text-[10px] text-[#DBCEB1]/80 leading-tight font-mono">
+                <p className="text-[10px] text-slate-500 leading-tight font-mono">
                   {user.email}
                 </p>
               </div>
             </div>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-[#283733] border-[#475853] text-[#FDF6F0]">
-            <DropdownMenuLabel className="text-xs text-[#DBCEB1] uppercase font-bold tracking-wider">Account Overview</DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-[#475853]" />
-            <DropdownMenuItem asChild className="focus:bg-[#475853] focus:text-[#FDF6F0] text-xs cursor-pointer">
+          <DropdownMenuContent align="end" className="w-56 bg-white border-slate-200 text-[#0F172A] shadow-xl">
+            <DropdownMenuLabel className="text-xs text-slate-500 uppercase font-bold tracking-wider">Account Overview</DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-slate-100" />
+            <DropdownMenuItem asChild className="focus:bg-slate-100 focus:text-[#0F172A] text-xs cursor-pointer">
               <Link to="/app/profile" className="flex items-center space-x-2 w-full">
-                <User className="h-4 w-4 text-[#DBCEB1]" />
+                <User className="h-4 w-4 text-[#0FA891]" />
                 <span>My Profile</span>
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-[#475853]" />
+            <DropdownMenuSeparator className="bg-slate-100" />
             <DropdownMenuItem
               onClick={logout}
-              className="text-[#B84A4A] focus:bg-[#B84A4A]/20 focus:text-[#B84A4A] text-xs cursor-pointer"
+              className="text-red-600 focus:bg-red-50 focus:text-red-700 text-xs cursor-pointer"
             >
               <LogOut className="h-4 w-4 mr-2" />
-              <span>Sign Out Terminal</span>
+              <span>Sign Out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -101,3 +93,4 @@ export function Topbar() {
   );
 }
 
+export default Topbar;

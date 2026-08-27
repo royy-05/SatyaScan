@@ -40,16 +40,29 @@ enum Decision {
   REJECT
 }
 
+enum UserStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
 model User {
-  id           String           @id @default(uuid())
-  email        String           @unique
-  passwordHash String
-  name         String
-  role         Role             @default(SUBMITTER)
-  isActive     Boolean          @default(true)
-  deletedAt    DateTime?
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  id                 String           @id @default(uuid())
+  email              String           @unique
+  passwordHash       String
+  name               String
+  role               Role             @default(SUBMITTER)
+  status             UserStatus       @default(APPROVED)
+  approvedById       String?
+  approvedBy         User?            @relation("UserApprovals", fields: [approvedById], references: [id])
+  approvedAt         DateTime?
+  approvals          User[]           @relation("UserApprovals")
+  registrationReason String?
+  contactNumber      String?
+  isActive           Boolean          @default(true)
+  deletedAt          DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
   documents       Document[]
   reviewDecisions ReviewDecision[]
