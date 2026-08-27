@@ -44,7 +44,7 @@ class TamperingDetector:
             ela_array = np.array(ela_im)
             std_dev = np.std(ela_array)
             
-            is_tampered = std_dev > (10 * self.ela_std_mult) # arbitrary threshold for demo
+            is_tampered = bool(std_dev > (10 * self.ela_std_mult)) # arbitrary threshold for demo
             
             tampered_regions = []
             if is_tampered:
@@ -96,7 +96,7 @@ class TamperingDetector:
                     good_matches.append(m)
                     
         # If there are many similar but non-identical patches, likely copy-move
-        return len(good_matches) > 15 
+        return len(good_matches) > 5 
 
     def process(self, image_path):
         ela_std, ela_flag, tampered_regions = self.calculate_ela(image_path)

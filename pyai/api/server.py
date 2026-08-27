@@ -1,9 +1,12 @@
 from fastapi import FastAPI, File, UploadFile, Form, Security, HTTPException, status
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 import shutil
 import os
 import sys
 import warnings
+from dotenv import load_dotenv
+
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 load_dotenv()

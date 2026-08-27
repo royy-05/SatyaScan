@@ -55,7 +55,12 @@ export const documentController = {
         await storageService.delete(savedSelfie.storageKey).catch(() => {});
       }
 
-      const latestVerification = document.verifications[0];
+      // Re-fetch document to get the latest verification created by the background AI process
+      const currentDoc = await prisma.document.findFirst({
+        where: { id: document.id },
+        include: { verifications: { orderBy: { createdAt: "desc" }, take: 1 } },
+      });
+      const latestVerification = currentDoc?.verifications[0];
       const updatedLayers = {
         ...(latestVerification?.layers || {}),
         face: faceResult.face,

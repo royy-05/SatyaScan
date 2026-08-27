@@ -18,7 +18,7 @@ models:
 thresholds:
   ela:
     quality: 90
-    std_dev_multiplier: 5.0
+    std_dev_multiplier: 0.5
   risk:
     low_upper_bound: 30
     review_upper_bound: 70
