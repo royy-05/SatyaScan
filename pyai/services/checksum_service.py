@@ -84,3 +84,21 @@ class ChecksumService:
         if not document_number:
             return False
         return icao9303_check(document_number)
+
+    @staticmethod
+    def validate_pan(document_number: str) -> bool:
+        if not document_number:
+            return False
+        return bool(re.match(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$', document_number))
+
+    @staticmethod
+    def validate_voter_id(document_number: str) -> bool:
+        if not document_number:
+            return False
+        return bool(re.match(r'^[A-Z]{3}[0-9]{7}$', document_number))
+
+    @staticmethod
+    def validate_dl(document_number: str) -> bool:
+        if not document_number:
+            return False
+        return bool(re.match(r'^[A-Z]{2}[-\s]?[0-9]{2}[-\s]?[0-9]{11}$', document_number))

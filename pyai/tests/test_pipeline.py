@@ -33,7 +33,7 @@ def test_ocr_mrz_validation(ocr_engine):
     assert ocr_engine.validate_mrz(invalid_mrz) == False
 
 def test_ocr_aadhaar_validation(ocr_engine):
-    valid_aadhaar = ["1234 5678 9012"]
+    valid_aadhaar = ["1234 5678 9010"]
     invalid_aadhaar = ["123456"]
     
     assert ocr_engine.validate_aadhaar(valid_aadhaar) == True

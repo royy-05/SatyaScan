@@ -11,6 +11,10 @@ export function errorHandler(err, req, res, _next) {
     stack: env.NODE_ENV === "development" ? err.stack : undefined,
   });
 
+  if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+    return sendError(res, "Invalid JSON payload in request body", "INVALID_JSON", 400);
+  }
+
   if (err.name === "ZodError") {
     return sendError(res, "Input validation failed", "VALIDATION_ERROR", 400, err.errors);
   }

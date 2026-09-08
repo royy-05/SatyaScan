@@ -45,7 +45,7 @@ export const aiService = {
           ...formData.getHeaders(),
           "X-API-Key": env.AI_API_KEY
         },
-        timeout: 180000,
+        timeout: 15000,
       });
 
       const aiData = response.data;
@@ -177,7 +177,7 @@ export const aiService = {
           ...formData.getHeaders(),
           "X-API-Key": env.AI_API_KEY,
         },
-        timeout: 180000,
+        timeout: 15000,
       });
 
       const aiData = response.data;

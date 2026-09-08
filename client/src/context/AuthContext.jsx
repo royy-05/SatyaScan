@@ -4,7 +4,7 @@ import { apiClient, setAccessToken, registerRefreshTokenHandler } from "../api/c
 import { toast } from "sonner";
 
 const axiosInstanceRaw = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:4000/api/v1",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1",
 });
 
 export const AuthContext = createContext(null);

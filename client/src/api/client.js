@@ -33,14 +33,14 @@ apiClient.interceptors.request.use(
     if (inMemoryToken) {
       config.headers.Authorization = `Bearer ${inMemoryToken}`;
     }
-    
+
     try {
       const fingerprint = await getDeviceFingerprint();
       config.headers["X-Device-Fingerprint"] = fingerprint;
     } catch (err) {
       console.warn("Failed to get device fingerprint", err);
     }
-    
+
     return config;
   },
   (error) => Promise.reject(error)
