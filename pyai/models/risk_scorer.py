@@ -1,7 +1,10 @@
+import os
 import yaml
 
 class RiskScorer:
-    def __init__(self, config_path="config/config.yaml"):
+    def __init__(self, config_path=None):
+        if config_path is None:
+            config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "config.yaml")
         with open(config_path, "r") as f:
             cfg = yaml.safe_load(f)
             self.weights = cfg["risk_weights"]

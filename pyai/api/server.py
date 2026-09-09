@@ -184,7 +184,10 @@ async def scan_document(
     # Single-Pass OCR
     ocr_detections = OCRService.extract_text_with_bboxes(image_np)
     text_list = [det["text"] for det in ocr_detections]
-    parsed_fields = OCRService.parse_document(text_list, doc_type)
+    parsed_fields = OCRService.parse_document(text_list, doc_type, ocr_detections=ocr_detections)
+    
+    if "_classified_doc_type" in parsed_fields:
+        doc_type = parsed_fields.pop("_classified_doc_type")
     
     # Forensics Suite
     forensics = ForensicsService.analyze_unified(raw_bytes, image_np, face_bbox, ocr_detections)
@@ -219,66 +222,26 @@ async def scan_document(
 
 @app.post("/verify")
 async def verify_identity(
-    file: Optional[UploadFile] = File(None),
     id_image: Optional[UploadFile] = File(None),
     selfie_image: Optional[UploadFile] = File(None),
-    doc_type: str = Form("AADHAAR"),
-    deviceHash: Optional[str] = Form(None),
-    submitterId: Optional[str] = Form(None),
     api_key: str = Security(verify_api_key)
 ):
-    upload = file or id_image
-    if not upload:
-        raise HTTPException(status_code=400, detail="Document image file required ('file' or 'id_image').")
+    if not id_image or not selfie_image:
+        raise HTTPException(status_code=400, detail="Both 'id_image' and 'selfie_image' are required.")
         
     start_time = time.time()
-    raw_bytes, image_np = await _process_uploaded_image(upload)
+    _, id_np = await _process_uploaded_image(id_image)
+    _, selfie_np = await _process_uploaded_image(selfie_image)
     
-    # Biometric Face Detection on document
-    face_detect = FaceService.extract_face(image_np)
-    face_bbox = face_detect.get("bbox", [])
+    face_res = FaceService.compare_faces(id_np, selfie_np)
     
-    # Biometric Face Matching if selfie provided
-    if selfie_image:
-        _, selfie_np = await _process_uploaded_image(selfie_image)
-        face_res = FaceService.compare_faces(image_np, selfie_np)
-        del selfie_np
-    else:
-        face_res = {
-            "similarity": 1.0,
-            "match": True,
-            "confidence": 1.0,
-            "notes": "No selfie provided; face check bypassed.",
-            "face_detected": face_detect.get("face_detected", False)
-        }
-        
-    # Single-Pass OCR
-    ocr_detections = OCRService.extract_text_with_bboxes(image_np)
-    text_list = [det["text"] for det in ocr_detections]
-    parsed_fields = OCRService.parse_document(text_list, doc_type)
-    
-    # Forensics Suite
-    forensics = ForensicsService.analyze_unified(raw_bytes, image_np, face_bbox, ocr_detections)
-    
-    if forensics.get("tampering_detected") or not face_res.get("match", True):
-        status_verdict = "REJECTED"
-    elif forensics.get("verdict") == "REVIEW":
-        status_verdict = "SUSPICIOUS"
-    elif not parsed_fields.get("checksum_valid"):
-        status_verdict = "SUSPICIOUS"
-    else:
-        status_verdict = "VERIFIED"
-        
     processing_time_ms = int((time.time() - start_time) * 1000)
+    face_res["execution_time_ms"] = processing_time_ms
     
-    res = _build_unified_response(
-        status_verdict, doc_type, parsed_fields, text_list, forensics, face_res, face_detect, processing_time_ms
-    )
-    
-    del image_np
-    del raw_bytes
+    del id_np
+    del selfie_np
     gc.collect()
-    return res
+    return face_res
 
 if __name__ == "__main__":
     import uvicorn

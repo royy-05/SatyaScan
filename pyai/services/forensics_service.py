@@ -165,6 +165,98 @@ class ForensicsService:
         return result
 
     @staticmethod
+    def check_stamp_authenticity(img: np.ndarray) -> Dict[str, Any]:
+        """Detect and analyze official stamps/seals for forgery."""
+        result = {
+            "stamp_detected": False,
+            "stamp_count": 0,
+            "stamp_authenticity_score": 0.0,
+            "stamp_tampered": False,
+            "details": "No stamp detected."
+        }
+        if img is None or img.size == 0:
+            return result
+            
+        try:
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+            
+            # Blue/Purple ink
+            lower_blue = np.array([100, 40, 40])
+            upper_blue = np.array([145, 255, 240])
+            mask_blue = cv2.inRange(hsv, lower_blue, upper_blue)
+            
+            # Red ink (wraps around Hue 0 and 180)
+            lower_red1 = np.array([0, 50, 50])
+            upper_red1 = np.array([10, 255, 255])
+            mask_red1 = cv2.inRange(hsv, lower_red1, upper_red1)
+            
+            lower_red2 = np.array([170, 50, 50])
+            upper_red2 = np.array([180, 255, 255])
+            mask_red2 = cv2.inRange(hsv, lower_red2, upper_red2)
+            
+            mask_red = cv2.bitwise_or(mask_red1, mask_red2)
+            
+            # Combined ink mask
+            ink_mask = cv2.bitwise_or(mask_blue, mask_red)
+            
+            # Morphological closing to bridge gaps
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+            closed_mask = cv2.morphologyEx(ink_mask, cv2.MORPH_CLOSE, kernel)
+            
+            contours, _ = cv2.findContours(closed_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            
+            valid_stamps = []
+            for cnt in contours:
+                area = cv2.contourArea(cnt)
+                if area < 500: # filter noise
+                    continue
+                perimeter = cv2.arcLength(cnt, True)
+                if perimeter == 0:
+                    continue
+                circularity = 4 * np.pi * (area / (perimeter * perimeter))
+                if circularity > 0.6: # Relaxed circularity for imperfect human stamps
+                    valid_stamps.append(cnt)
+                    
+            if len(valid_stamps) == 0:
+                return result
+                
+            result["stamp_detected"] = True
+            result["stamp_count"] = len(valid_stamps)
+            
+            # Analyze ink authenticity via Laplacian variance
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            laplacian = cv2.Laplacian(gray, cv2.CV_64F)
+            
+            stamp_scores = []
+            for cnt in valid_stamps:
+                # Mask just the perimeter of the stamp
+                perimeter_mask = np.zeros(gray.shape, dtype=np.uint8)
+                cv2.drawContours(perimeter_mask, [cnt], -1, 255, 5) # 5px boundary
+                
+                perimeter_laplacian = laplacian[perimeter_mask == 255]
+                if perimeter_laplacian.size > 0:
+                    var = perimeter_laplacian.var()
+                    # Real wet ink has variance typically bounded due to natural gradients
+                    # Digital stamps are extremely sharp, high variance
+                    score = min(var / 5000.0, 1.0) # Normalize
+                    stamp_scores.append(score)
+            
+            if stamp_scores:
+                avg_score = float(np.mean(stamp_scores))
+                result["stamp_authenticity_score"] = avg_score
+                # > 0.8 usually implies artificially sharp boundary (synthetic)
+                if avg_score > 0.8:
+                    result["stamp_tampered"] = True
+                    result["details"] = "Unnaturally sharp edges detected. Potential digital forgery."
+                else:
+                    result["details"] = "Natural ink micro-variations detected."
+                    
+        except Exception as e:
+            print(f"Stamp analysis error: {e}")
+            
+        return result
+
+    @staticmethod
     def analyze_unified(image_bytes: bytes, image_np: np.ndarray, face_bbox: list, ocr_detections: list) -> Dict[str, Any]:
         if image_np is None:
             return {
@@ -174,7 +266,14 @@ class ForensicsService:
                 "blur_score": 0.0,
                 "photo_splice": {"tampered": False, "score": 0.0},
                 "text_manipulation": {"tampered": False, "score": 0.0},
-                "metadata": {"software_detected": None, "flagged": False}
+                "metadata": {"software_detected": None, "flagged": False},
+                "stamp_analysis": {
+                    "stamp_detected": False,
+                    "stamp_count": 0,
+                    "stamp_authenticity_score": 0.0,
+                    "stamp_tampered": False,
+                    "details": "No stamp detected."
+                }
             }
             
         ela_score = ForensicsService.calculate_ela(image_np)
@@ -184,13 +283,15 @@ class ForensicsService:
         exif_res = ForensicsService.check_exif_tampering(image_bytes)
         splice_res = ForensicsService.check_photo_edge_splice(image_np, face_bbox)
         text_res = ForensicsService.check_text_manipulation(image_np, ocr_detections)
+        stamp_res = ForensicsService.check_stamp_authenticity(image_np)
         
         tampering_detected = (
             copy_move or 
             ela_score > 0.15 or 
             exif_res["metadata_tamper_flag"] or 
             splice_res["photo_tampered"] or 
-            text_res["tampering_suspected"]
+            text_res["tampering_suspected"] or
+            stamp_res["stamp_tampered"]
         )
         
         if tampering_detected:
@@ -216,5 +317,6 @@ class ForensicsService:
             "metadata": {
                 "software_detected": exif_res["software_detected"],
                 "flagged": exif_res["metadata_tamper_flag"]
-            }
+            },
+            "stamp_analysis": stamp_res
         }

@@ -31,6 +31,7 @@ const DOC_TYPES = [
   { code: "PAN", label: "PAN Card", icon: CreditCard },
   { code: "DRIVING_LICENSE", label: "Driving License", icon: IdCard },
   { code: "VOTER", label: "Voter ID", icon: FileText },
+  { code: "PERMIT", label: "Permit", icon: FileText },
 ];
 
 export function SubmitterScanPage() {
@@ -122,6 +123,7 @@ export function SubmitterScanPage() {
         PAN: "PAN",
         DRIVING_LICENSE: "DRIVING_LICENSE",
         VOTER: "NATIONAL_ID",
+        PERMIT: "PERMIT",
       };
       const apiDocType = docTypeMap[selectedType] || selectedType;
       const res = await uploadDocument(docFile, apiDocType);

@@ -45,7 +45,7 @@ export const aiService = {
           ...formData.getHeaders(),
           "X-API-Key": env.AI_API_KEY
         },
-        timeout: 15000,
+        timeout: 60000,
       });
 
       const aiData = response.data;
@@ -65,12 +65,15 @@ export const aiService = {
       }
 
       const extracted = {
-        name: nameVal || "N/A",
-        docNumber: targetFields.doc_number || targetFields.document_number || "N/A",
-        dob: targetFields.dob || targetFields.date_of_birth || "N/A",
+        name: nameVal || null,
+        docNumber: targetFields.doc_number || targetFields.document_number || null,
+        dob: targetFields.dob || targetFields.date_of_birth || null,
+        age: targetFields.age != null ? String(targetFields.age) : null,
         nationality: targetFields.nationality || "IND",
-        expiry: targetFields.expiry || targetFields.expiration_date || "N/A",
-        gender: targetFields.gender || targetFields.sex || "N/A",
+        expiry: targetFields.expiry || targetFields.expiration_date || targetFields.valid_to || null,
+        gender: targetFields.gender || targetFields.sex || null,
+        address: targetFields.address || null,
+        issuingAuthority: targetFields.issuing_authority || null,
       };
 
       const textsExtracted = aiData.ocr?.texts_extracted || [];
@@ -115,6 +118,7 @@ export const aiService = {
             passed: ocrPassed,
             confidence: ocrConfidence,
             notes: ocrNotes,
+            fields: targetFields,
           },
           validation: {
             passed: isFormatValid,
@@ -126,7 +130,8 @@ export const aiService = {
             confidence: parseFloat((1.0 - (aiData.tampering?.deep_model_prob || 0)).toFixed(2)),
             notes: isTampered ? "Digital tampering / ELA anomaly detected." : "No digital copy-move or ELA anomalies.",
             tampered_regions: aiData.tampering?.tampered_regions || [],
-            sift_copy_move_detected: aiData.tampering?.sift_copy_move_detected || false
+            sift_copy_move_detected: aiData.tampering?.sift_copy_move_detected || false,
+            forensic_analysis: aiData.forensic_analysis || {},
           },
           face: { passed: true, confidence: 1.0, notes: "Face check not run (no selfie)" },
         },
@@ -177,28 +182,35 @@ export const aiService = {
           ...formData.getHeaders(),
           "X-API-Key": env.AI_API_KEY,
         },
-        timeout: 15000,
+        timeout: 60000,
       });
 
       const aiData = response.data;
-      const faceBio =
-        aiData.document_status?.face_biometrics ||
-        aiData.face_biometrics ||
-        aiData.face ||
-        {};
+      
+      // The new endpoint directly returns the face comparison fields
+      const faceBio = aiData; 
 
       let similarity = 0.85;
-      if (typeof faceBio.similarity === "number") {
-        similarity = faceBio.similarity;
+      if (typeof faceBio.similarity_score === "number") {
+        similarity = faceBio.similarity_score;
       } else if (typeof faceBio.confidence === "number") {
         similarity = faceBio.confidence;
       }
 
+      const passed = typeof faceBio.face_match === "boolean" ? faceBio.face_match : similarity >= 0.6;
+      let notes = `Face match ${(similarity * 100).toFixed(0)}%`;
+      
+      if (faceBio.id_face_detected === false) {
+        notes = "No face detected in document";
+      } else if (faceBio.selfie_face_detected === false) {
+        notes = "No face detected in selfie";
+      }
+
       return {
         face: {
-          passed: similarity >= 0.6,
+          passed: passed,
           confidence: similarity,
-          notes: `Face match ${(similarity * 100).toFixed(0)}%`,
+          notes: notes,
         },
         faceMatchScore: similarity,
       };

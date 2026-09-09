@@ -191,12 +191,23 @@ export function SubmissionDetailPage() {
   }
 
   const layers = latestVerification?.layers || {};
-  const extractedName = latestVerification?.extractedName || null;
-  const extractedDocNumber = latestVerification?.extractedDocNumber || null;
-  const extractedDob = latestVerification?.extractedDob || null;
-  const extractedGender = latestVerification?.extractedGender || null;
-  const ageVal = computeAge(extractedDob);
+  const extractedFields = layers.ocr?.fields || {};
+  
+  // Clean extraction fallbacks: guard against literal "N/A" strings so they don't show false positive checks
+  const sanitize = (val) => (!val || val === "N/A" ? null : val);
+
+  const extractedName = sanitize(latestVerification?.extractedName) || sanitize(extractedFields.name);
+  const extractedDocNumber = sanitize(latestVerification?.extractedDocNumber) || sanitize(extractedFields.document_number) || sanitize(extractedFields.doc_number);
+  const extractedDob = sanitize(latestVerification?.extractedDob) || sanitize(extractedFields.dob);
+  const extractedGender = sanitize(latestVerification?.extractedGender) || sanitize(extractedFields.gender);
+  
+  const rawAge = extractedFields.age != null ? extractedFields.age : null;
+  const ageFromDob = extractedDob ? computeAge(extractedDob) : null;
+  const finalAge = rawAge ? `${rawAge} years` : (ageFromDob ? `${ageFromDob} years` : null);
+
   const formattedGender = mapGender(extractedGender);
+  const extractedAddress = sanitize(extractedFields.address);
+  const extractedAuthority = sanitize(extractedFields.issuing_authority) || ISSUING_AUTHORITIES[doc.docType] || ISSUING_AUTHORITIES.DEFAULT;
 
   // Verification Checklist Items
   const checklistItems = [
@@ -215,10 +226,10 @@ export function SubmissionDetailPage() {
     { key: "dob", label: "Date of Birth", value: extractedDob, isMono: true, source: "Visual Zone OCR" },
     { key: "docNumber", label: "Document Number", value: extractedDocNumber, isMono: true, source: "Visual Zone OCR" },
     { key: "gender", label: "Sex / Gender", value: formattedGender, source: "Visual Zone OCR" },
-    { key: "age", label: "Age", value: ageVal ? `${ageVal} years` : null, source: "Calculated from DOB" },
-    { key: "nationality", label: "Nationality", value: "IND", isMono: true, source: "Standard Issue" },
-    { key: "authority", label: "Issuing Authority", value: ISSUING_AUTHORITIES[doc.docType] || ISSUING_AUTHORITIES.DEFAULT, source: "Document Template" },
-    { key: "address", label: "Address", value: null, source: "Visual Zone OCR" },
+    { key: "age", label: "Age", value: finalAge, source: rawAge ? "Extracted from Document" : "Calculated from DOB" },
+    { key: "nationality", label: "Nationality", value: sanitize(latestVerification?.extractedNationality) || "IND", isMono: true, source: "Standard Issue" },
+    { key: "authority", label: "Issuing Authority", value: extractedAuthority, source: extractedFields.issuing_authority ? "Extracted from Document" : "Document Template" },
+    { key: "address", label: "Address", value: extractedAddress, source: "Visual Zone OCR" },
   ];
 
   const docTypeLabel = DOC_TYPE_LABELS[doc.docType] || doc.docType;
@@ -346,9 +357,9 @@ export function SubmissionDetailPage() {
                   )}
 
                   {/* Sub-info line */}
-                  {(formattedGender || ageVal) && (
+                  {(formattedGender || finalAge) && (
                     <p className="text-xs font-medium text-[#334155] mt-1">
-                      {formattedGender ? formattedGender : ""}{formattedGender && ageVal ? ", " : ""}{ageVal ? `Age ${ageVal}` : ""}
+                      {formattedGender ? formattedGender : ""}{formattedGender && finalAge ? ", " : ""}{finalAge ? finalAge : ""}
                     </p>
                   )}
 

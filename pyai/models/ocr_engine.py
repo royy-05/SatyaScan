@@ -7,8 +7,12 @@ import sys
 if sys.stdout.encoding.lower() != 'utf-8':
     sys.stdout.reconfigure(encoding='utf-8')
 
+import os
+
 class OCREngine:
-    def __init__(self, config_path="config/config.yaml"):
+    def __init__(self, config_path=None):
+        if config_path is None:
+            config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "config.yaml")
         with open(config_path, "r") as f:
             self.config = yaml.safe_load(f)["models"]["ocr"]
             
@@ -23,7 +27,7 @@ class OCREngine:
 
     def extract_text(self, img_path):
         if not self.ocr_available:
-            return ["MOCK", "TEXT", "EXTRACTED"]
+            raise RuntimeError("EasyOCR is not initialized.")
             
         # EasyOCR returns a list of tuples: (bbox, text, prob)
         result = self.ocr.readtext(img_path)
@@ -160,7 +164,11 @@ class OCREngine:
             "north", "south", "bengal", "delhi", "mumbai", "kolkata", "father",
             "husband", "wife", "son", "daughter", "post", "office", "village",
             "town", "city", "pin", "no", "number", "issued", "print", "information",
-            "apartment", "road", "alambazar"
+            "apartment", "road", "alambazar", "frontier", "regulation", "eastern",
+            "nagaland", "arunachal", "mizoram", "manipur", "section", "granted",
+            "under", "police", "station", "border", "particulars", "check", "post",
+            "visiting", "following", "person", "hereby", "permitted", "cross",
+            "pass", "entry", "valid", "period", "purpose", "visit", "tourist"
         }
         
         dob_idx = -1
