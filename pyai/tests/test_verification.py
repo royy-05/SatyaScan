@@ -141,7 +141,7 @@ def test_parse_permit_spatial_nagaland():
         {"bbox": [229, 287, 275, 303], "text": "Name", "confidence": 0.98},
         {"bbox": [454, 278, 746, 304], "text": "niRanjAN Rata Gopal", "confidence": 0.85},
         {"bbox": [227, 315, 257, 331], "text": "Age", "confidence": 0.98},
-        {"bbox": [548, 310, 628, 338], "text": "36 yrs M", "confidence": 0.90},
+        {"bbox": [500, 310, 628, 338], "text": "36 yrs M", "confidence": 0.90},
         {"bbox": [224, 338, 423, 360], "text": "Father's Name", "confidence": 0.95},
         {"bbox": [430, 340, 750, 369], "text": "Rajagopal Valiya Veetil", "confidence": 0.85},
         {"bbox": [239, 447, 341, 467], "text": "Village/Town", "confidence": 0.95},

@@ -66,12 +66,12 @@ export const documentController = {
         face: faceResult.face,
       };
 
-      // Recalculate overall score with updated face layer
-      let score = 1.0;
-      if (updatedLayers.validation?.passed === false) score -= 0.4;
-      if (updatedLayers.tampering?.passed === false) score -= 0.3;
-      if (updatedLayers.face?.passed === false) score -= 0.3;
-      score = Math.max(0, parseFloat(score.toFixed(2)));
+      // Recalculate overall risk score with updated face layer (0 to 100)
+      let score = 0;
+      if (updatedLayers.validation?.passed === false) score += 40;
+      if (updatedLayers.tampering?.passed === false) score += 40;
+      if (updatedLayers.face?.passed === false) score += 20;
+      score = Math.min(100, score);
 
       const scoreEvaluated = scoringService.calculateScore({
         overallScore: score,

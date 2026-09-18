@@ -214,7 +214,7 @@ export function SubmissionDetailPage() {
     { label: "Document type detected", status: doc.docType ? "passed" : "failed" },
     { label: "Format validation", status: layers.validation?.passed ? "passed" : layers.validation ? "failed" : "gray" },
     { label: "Text extraction (OCR)", status: layers.ocr?.passed ? "passed" : layers.ocr ? "failed" : "gray" },
-    { label: "Checksum validation", status: layers.validation?.passed ? "passed" : "gray" },
+    { label: "Checksum validation", status: layers.validation?.passed ? "passed" : layers.validation ? "failed" : "gray" },
     { label: "Tampering analysis", status: layers.tampering?.passed ? "passed" : layers.tampering ? "failed" : "gray" },
     { label: "Image quality", status: doc.sizeBytes > 0 ? "passed" : "failed" },
     { label: "Portrait match (face)", status: isFaceVerified && faceLayer?.passed ? "passed" : isFaceVerified ? "failed" : "gray" },
