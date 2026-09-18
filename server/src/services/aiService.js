@@ -26,7 +26,7 @@ export const aiService = {
           tampering: { passed: true, confidence: 0.9, notes: "No digital copy-move or ELA anomalies." },
           face: { passed: true, confidence: 0.9, notes: "Document photo matches facial biometric embedding." },
         },
-        overallScore: 0.9,
+        overallScore: 10,
         verdict: "PASS",
         engineVersion: "stub-0.1",
       };
@@ -103,7 +103,7 @@ export const aiService = {
       }
 
       const riskAssessment = aiData.risk_assessment || {};
-      const compositeScore = riskAssessment.composite_risk_score ?? 0;
+      const compositeScore = (riskAssessment.composite_risk_score ?? 0) * 100;
       const riskFlag = riskAssessment.flag || "LOW";
       
       let verdict = "PASS";
