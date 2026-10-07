@@ -89,6 +89,8 @@ Document / Identity Input
                   │
                   ▼
              Audit Record
+
+
 Key Features
 Document Verification
 SatyaScan supports document categories including:
@@ -98,6 +100,8 @@ SatyaScan supports document categories including:
 - Driving Licence
 - Voter ID
 - Permit
+
+
 OCR & Field Extraction
 The AI pipeline can extract and process identity information such as:
 - Name
@@ -108,6 +112,8 @@ The AI pipeline can extract and process identity information such as:
 - Gender
 - Address
 - Issuing authority
+
+
 Document Validation
 The verification process includes document-format and field validation where supported by the selected document type.
 Tampering Detection
@@ -142,6 +148,8 @@ Role	Responsibility
 SUBMITTER	Upload documents and start verification
 OFFICER	Review flagged submissions and make decisions
 ADMIN	Manage users, audit records, and system-level statistics
+
+
 
 
 System Architecture
@@ -209,6 +217,9 @@ AI Engine
 - timm
 - ONNX Runtime
 - Pytest
+
+
+
 Repository Structure
 SatyaScan/
 ├── client/                  # React frontend
@@ -310,6 +321,8 @@ npm run db:seed
 npm run dev
 
 npm run dev starts the frontend and backend together.
+
+
 Python AI Engine
 The pyai/ directory contains the separate AI service.
 Its responsibilities include document scanning, OCR/field processing, tampering analysis, biometric verification, model training utilities, and AI pipeline tests.
@@ -436,6 +449,7 @@ SatyaScan includes application-level security and monitoring mechanisms such as:
 The AI repository uses synthetic data for development and testing.
 Do not upload or process real citizen identity documents or personally identifiable information in an untrusted development environment.
 
+
 SIH Reference
 Smart India Hackathon 2026
 - Problem Statement: 26188
@@ -447,14 +461,3 @@ Project Status
 SatyaScan is being developed as a Smart India Hackathon 2026 project.
 The current repository provides the frontend, backend, database integration, verification workflow, optional Python AI engine, and local development setup.
 Production deployment, government-system integrations, production-grade storage, infrastructure hardening, and other operational requirements may require additional implementation before real-world deployment.
-
-### Then do this
-
-After pasting:
-
-**Ctrl+S → open Source Control in VS Code → review the README diff → commit.**
-
-Use a commit message like:
-
-```text
-docs: improve README and setup instructions
